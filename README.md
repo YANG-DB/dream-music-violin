@@ -1,95 +1,37 @@
 # Dream Portal — Violin Dreamscapes 🌌🎻
 
-A dreamlike, audio-reactive home for a collection of violin recordings (with piano
-and with a chamber ensemble). Enter a portal, drift between two "worlds", and let an
-ever-changing aurora — clouds, butterflies, birds, shooting stars and a wandering
-hummingbird — move with the music.
+*An audiovisual reverie. Step through a portal and let the violin carry you into a
+slow, luminous nightfall — where aurora breathes, clouds drift, butterflies and
+birds cross the dark, and a hummingbird wanders by. The music does not simply play;
+it dreams aloud, and the whole sky moves with it.*
 
-**Live:** https://dream-music-violin.web.app
+> *Enter the dream:* https://dream-music-violin.web.app
 
 ---
 
-## ✨ Features
+## The vision
 
-- **Immersive structure** — a portal → gallery (two albums) → album view, with a
-  persistent glassy player.
-- **Audio-reactive dreamscape** (HTML5 Canvas + Web Audio `AnalyserNode`): aurora
-  ribbons, twinkling starfield, drifting clouds, butterflies, birds that flock on
-  note attacks, and kaleidoscopic "hallucination" blooms on transients.
-- **Five hand-tuned atmospheres** — Nocturne, Liquid Gold, Glass, Surreal Dream,
-  Sakura — plus an **Auto / adaptive** mode that crossfades the palette to the
-  music's energy and onset density.
-- **Fantasy-world backgrounds** — six images composited inside the canvas with a
-  perpetual Ken-Burns drift; off / pick-one / shuffle-cycle.
-- **Shift world & mood each song** (default) — every track crossfades to a new
-  background and its matched atmosphere.
-- **Mixable effects** — falling petals/snow/embers/stardust, shooting stars,
-  fireflies, bokeh orbs, constellation web, god rays, water mirror, kaleidoscope.
-- **Wandering hummingbird** — a looping video that flies a natural path, faces its
-  direction of travel (fading through a graceful flip), drifts away and returns, and
-  darts faster when the violin swells.
-- **Player** — play/pause, prev/next, seek, volume, loop-one, **endless shuffle**
-  across both albums, keyboard shortcuts, and a large transparent "begin" button.
-- **Cinematic idle** — the UI fades to transparency when the mouse rests and returns
-  on the slightest movement.
+This is a place to be lost in sound and colour. Each piece opens its own fantasy
+world — a night sky, an ember forest, a sea of blossom — and the air around it
+shifts in mood and hue as the bow moves. Stars brighten on the high harmonics,
+ribbons of light swell with the melody, and quiet petals of colour bloom on every
+note that lands. Nothing here asks anything of you. Put on headphones, let the
+cursor stir the air, and drift.
 
-## 🎹 Controls
+It is half-remembered and deliberately so: a dream you can hear.
 
-| Action | Control |
-| --- | --- |
-| Play / pause | `Space` or the player / big button |
-| Seek ±5s | `←` / `→` |
-| Previous / next movement | `Shift` + `←` / `→` |
-| Atmosphere, backgrounds, effects | the **✦** dock, top-right |
+## The violin
 
-## 🗂️ Project structure
+These are violin recordings, played two ways —
 
-```
-index.html        # markup: portal, gallery, album, player, theme dock, hummingbird
-styles.css        # all styling (nocturne base, glassmorphism, idle fade)
-tracks.js         # album + track manifest (titles, durations)
-themes.js         # palettes + adaptive-mode logic
-visuals.js        # the canvas dreamscape engine (aurora, creatures, effects, fx)
-app.js            # navigation, audio player, Web Audio graph, theme/bg/fx wiring
-hummingbird.js    # the wandering-bird flight controller
-music/            # recordings + fantasy background images
-favicon.svg       # fantasy favicon (+ png fallbacks)
-firebase.json     # Firebase Hosting config
-```
+- **With piano** — sixteen movements for violin and piano: a long, slow dusk, two
+  instruments breathing as one.
+- **With a chamber ensemble** — ten movements for violin and a small chamber of
+  voices, gathering quietly in the dark.
 
-## 🚀 Run locally
+Twenty-six movements in all, untitled in their making and so left to the
+imagination — each given only a dream-name and a Roman numeral, so the music can
+speak before any word does. They were not written to be analysed; they were made to
+be felt, and this is simply a vessel that lets them be felt a little more.
 
-It must be served over **HTTP** (not opened as a `file://`), because the visuals
-"listen" to the audio via the Web Audio API, which requires a same-origin source.
-
-```bash
-python3 -m http.server 8777
-# then open http://localhost:8777/
-```
-
-## ☁️ Deploy (Firebase Hosting)
-
-```bash
-firebase deploy --only hosting
-```
-
-## 🔒 Security
-
-This is a fully static, client-side site:
-
-- No backend, no database, no user input — and therefore no XSS sink (all DOM is
-  built from hard-coded data).
-- No secrets, API keys, or credentials are committed. `.firebaserc` holds only the
-  public Firebase **project ID**; the site embeds no Firebase SDK config.
-- The only third-party resource is Google Fonts (stylesheet).
-
-## 📄 Credits & rights
-
-- **Music:** original violin recordings by the site owner.
-- **Background images / hummingbird clip:** dreamlike visuals used to set the mood;
-  please confirm you hold the rights to any media before reusing this repository.
-
-## 🛠️ Built with
-
-Vanilla HTML, CSS and JavaScript — no frameworks, no build step. Canvas 2D + the
-Web Audio API, hosted on Firebase Hosting.
+Lean back. Let it play on.
