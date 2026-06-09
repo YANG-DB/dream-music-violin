@@ -9,6 +9,7 @@
   const audio = new Audio();
   audio.preload = "metadata";
   audio.crossOrigin = "anonymous";
+  window.SoundAudio = audio;                 // exposed for the sound studio
   let actx = null, analyser = null, srcNode = null, audioReady = false;
 
   function ensureAudioGraph() {
@@ -19,10 +20,24 @@
       analyser.fftSize = 1024;
       analyser.smoothingTimeConstant = 0.82;
       srcNode = actx.createMediaElementSource(audio);
-      srcNode.connect(analyser);
-      analyser.connect(actx.destination);
+
+      // --- sound-studio effects chain: gain -> smooth -> elevate -> comp ---
+      const gain = actx.createGain();
+      const smooth = actx.createBiquadFilter();   // low-pass: softens / warms
+      smooth.type = "lowpass"; smooth.frequency.value = 20000; smooth.Q.value = 0.7;
+      const elevate = actx.createBiquadFilter();  // high-shelf: air / brightness
+      elevate.type = "highshelf"; elevate.frequency.value = 3500; elevate.gain.value = 0;
+      const comp = actx.createDynamicsCompressor(); // tames peaks when boosting
+      comp.threshold.value = -10; comp.knee.value = 24; comp.ratio.value = 3;
+      comp.attack.value = 0.005; comp.release.value = 0.2;
+
+      srcNode.connect(gain); gain.connect(smooth); smooth.connect(elevate);
+      elevate.connect(comp); comp.connect(analyser); analyser.connect(actx.destination);
+
+      window.SoundFX = { ctx: actx, audio, gain, smooth, elevate, comp };
       Dream.setAnalyser(analyser);
       audioReady = true;
+      if (window.Studio && window.Studio.apply) window.Studio.apply();
     } catch (e) {
       console.warn("Web Audio unavailable; visuals run un-reactive.", e);
     }
@@ -180,6 +195,8 @@
     $("#np-num").textContent = ROMAN[tr.n] || tr.n;
     $("#np-name").textContent = tr.name;
     $("#np-album").textContent = curAlbum.title + " · " + curAlbum.subtitle;
+    // expose the current track to the sound studio (for local export)
+    window.SoundCurrent = { src: srcFor(curAlbum, curIndex), name: tr.name, album: curAlbum.title };
   }
   function markPlaying() {
     $$(".track").forEach(li => {

@@ -359,6 +359,34 @@ body { position: relative; }
 .fx-pill.on::before { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 .dock-panel { max-height: calc(100vh - 120px); overflow-y: auto; }
 
+/* ---------- Sound studio (left dock) ---------- */
+.studio { position: fixed; top: 22px; left: 22px; z-index: 7; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.studio-toggle {
+  width: 46px; height: 46px; border-radius: 50%; cursor: pointer;
+  background: rgba(14,16,34,0.55); border: 1px solid var(--glass-line); color: var(--text);
+  backdrop-filter: blur(18px); font-size: 18px;
+  transition: transform 0.5s var(--ease), box-shadow 0.5s;
+}
+.studio-toggle:hover { transform: scale(1.08); box-shadow: 0 0 30px rgba(138,166,255,0.4); }
+.studio-panel {
+  width: 256px; padding: 18px; border-radius: 20px;
+  background: rgba(14,16,34,0.62); border: 1px solid var(--glass-line);
+  backdrop-filter: blur(22px); box-shadow: 0 24px 70px rgba(0,0,0,0.5);
+  opacity: 0; transform: translateY(-8px) scale(0.98); transform-origin: top left;
+  pointer-events: none; transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+}
+.studio.open .studio-panel { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.sx { margin-bottom: 16px; }
+.sx-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.sx-name { font-family: "Cormorant Garamond", serif; font-size: 18px; letter-spacing: 0.04em; }
+.sx-val { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--accent); }
+.sx input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+.sx-hint { font-size: 10px; letter-spacing: 0.08em; color: var(--muted); margin-top: 4px; }
+.studio-row { display: flex; gap: 8px; margin-top: 4px; }
+.studio-row .theme-special { flex: 1; }
+.sx-status { font-size: 11px; color: var(--muted); margin-top: 10px; min-height: 14px; font-style: italic; }
+.sx-status.busy { color: var(--accent); }
+
 /* ---------- Auto hint toast ---------- */
 .auto-hint {
   position: fixed; top: 80px; right: 22px; z-index: 7;
@@ -370,7 +398,7 @@ body { position: relative; }
 .auto-hint.show { opacity: 1; transform: translateY(0); }
 
 /* ---------- Cinematic idle: chrome fades when the mouse rests ---------- */
-.album-head, .tracklist, .gallery-head, #player, #dock, .portal-foot {
+.album-head, .tracklist, .gallery-head, #player, #dock, #studio, .portal-foot {
   transition: opacity 1.4s var(--ease);
 }
 body.idle { cursor: none; }
@@ -379,12 +407,14 @@ body.idle .tracklist,
 body.idle .gallery-head,
 body.idle .portal-foot,
 body.idle #player,
-body.idle #dock {
+body.idle #dock,
+body.idle #studio {
   opacity: 0;
   pointer-events: none;
 }
-/* keep the dock visible while its panel is pinned open */
-body.idle #dock.open { opacity: 1; pointer-events: auto; }
+/* keep docks visible while their panels are pinned open */
+body.idle #dock.open,
+body.idle #studio.open { opacity: 1; pointer-events: auto; }
 
 /* ---------- Animations ---------- */
 @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }

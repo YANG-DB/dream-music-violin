@@ -130,10 +130,49 @@
 
 <div id="hint-auto" class="auto-hint"></div>
 
+<!-- ============ SOUND STUDIO ============ -->
+<div id="studio" class="studio">
+  <button id="studio-toggle" class="studio-toggle" title="Sound studio">🎚</button>
+  <div class="studio-panel">
+    <div class="dock-label">sound studio</div>
+
+    <div class="sx">
+      <div class="sx-row"><span class="sx-name">speed</span><span id="sx-speed-val" class="sx-val">1.00×</span></div>
+      <input id="sx-speed" type="range" min="0.5" max="1.5" step="0.01" value="1" />
+      <div class="sx-hint">slower ⟷ faster · ride it through a section</div>
+    </div>
+
+    <div class="sx">
+      <div class="sx-row"><span class="sx-name">volume</span><span id="sx-vol-val" class="sx-val">100%</span></div>
+      <input id="sx-vol" type="range" min="0" max="2" step="0.01" value="1" />
+      <div class="sx-hint">reduce ⟷ increase (boost past 100%)</div>
+    </div>
+
+    <div class="sx">
+      <div class="sx-row"><span class="sx-name">smooth</span><span id="sx-smooth-val" class="sx-val">0%</span></div>
+      <input id="sx-smooth" type="range" min="0" max="1" step="0.01" value="0" />
+      <div class="sx-hint">soften the edges · warmer tone</div>
+    </div>
+
+    <div class="sx">
+      <div class="sx-row"><span class="sx-name">elevate</span><span id="sx-elevate-val" class="sx-val">0 dB</span></div>
+      <input id="sx-elevate" type="range" min="0" max="12" step="0.1" value="0" />
+      <div class="sx-hint">lift the air &amp; presence</div>
+    </div>
+
+    <div class="studio-row">
+      <button id="sx-reset" class="theme-special" title="Back to flat / unprocessed">○ Reset</button>
+      <button id="sx-save" class="theme-special" title="Render this movement with the effects and download a .wav">⤓ Save .wav</button>
+    </div>
+    <div id="sx-status" class="sx-status"></div>
+  </div>
+</div>
+
 <script src="tracks.js"></script>
 <script src="themes.js"></script>
 <script src="visuals.js"></script>
 <script src="app.js"></script>
+<script src="studio.js"></script>
 <script src="hummingbird.js"></script>
 </body>
 </html>
