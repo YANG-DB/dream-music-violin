@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Dream Portal — Violin Dreamscapes</title>
+<meta name="description" content="A dreamlike audiovisual home for violin recordings — aurora, clouds, butterflies and birds that move with the music." />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="theme-color" content="#0a0a1e" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Full-screen dreamscape canvas (audio-reactive) -->
+<canvas id="dream" aria-hidden="true"></canvas>
+<div id="grain" aria-hidden="true"></div>
+<div id="vignette" aria-hidden="true"></div>
+
+<!-- Hummingbird video that wanders the screen (pure-black bg removed via screen blend) -->
+<video id="hummingbird" class="hummingbird" muted loop playsinline preload="auto" aria-hidden="true">
+  <source src="hummingbird.mp4" type="video/mp4" />
+</video>
+
+<!-- ============ PORTAL ============ -->
+<section id="portal" class="screen active">
+  <div class="portal-inner">
+    <p class="eyebrow">an audiovisual reverie</p>
+    <h1 class="title">Dream Portal</h1>
+    <p class="subtitle">Violin, half-dreamt — with piano, with a small chamber of voices.</p>
+    <button id="enter" class="enter-btn">
+      <span>Enter the dream</span>
+      <span class="enter-hint">sound on · headphones invite the spell</span>
+    </button>
+  </div>
+  <div class="portal-foot">26 movements · two worlds · move your cursor to stir the air</div>
+</section>
+
+<!-- ============ GALLERY ============ -->
+<section id="gallery" class="screen">
+  <header class="gallery-head">
+    <button class="ghost-btn" data-nav="portal">⟵ portal</button>
+    <h2 class="gallery-title">Two Worlds</h2>
+    <span class="gallery-sub">choose where to drift</span>
+  </header>
+  <div id="worlds" class="worlds"><!-- album cards injected by app.js --></div>
+</section>
+
+<!-- ============ ALBUM ============ -->
+<section id="album" class="screen">
+  <header class="album-head">
+    <button class="ghost-btn" data-nav="gallery">⟵ worlds</button>
+    <div class="album-titles">
+      <h2 id="album-title" class="album-title"></h2>
+      <p id="album-epigraph" class="album-epigraph"></p>
+    </div>
+  </header>
+  <ol id="tracklist" class="tracklist"><!-- tracks injected --></ol>
+</section>
+
+<!-- ============ BIG PLAY (transparent, to start the music) ============ -->
+<div id="bigplay" class="bigplay" aria-hidden="true">
+  <button class="bigplay-btn" title="Begin">
+    <svg viewBox="0 0 100 100" width="100" height="100" aria-hidden="true">
+      <circle cx="50" cy="50" r="47" class="bp-ring" />
+      <polygon points="40,32 72,50 40,68" class="bp-tri" />
+    </svg>
+    <span class="bigplay-label">begin the reverie</span>
+  </button>
+</div>
+
+<!-- ============ PLAYER (floating, persistent) ============ -->
+<div id="player" class="player hidden" aria-live="polite">
+  <div class="np">
+    <div class="np-art"><span id="np-num"></span></div>
+    <div class="np-meta">
+      <div id="np-name" class="np-name">—</div>
+      <div id="np-album" class="np-album"></div>
+    </div>
+  </div>
+  <div class="transport">
+    <button id="prev" class="t-btn" title="Previous">⏮</button>
+    <button id="playpause" class="t-btn play" title="Play / Pause">►</button>
+    <button id="next" class="t-btn" title="Next">⏭</button>
+  </div>
+  <div class="seek">
+    <span id="cur" class="time">0:00</span>
+    <div id="bar" class="bar"><div id="fill" class="fill"></div><div id="knob" class="knob"></div></div>
+    <span id="dur" class="time">0:00</span>
+  </div>
+  <div class="player-right">
+    <button id="shufflebtn" class="mini-btn" title="Shuffle all · endless random play">⤨</button>
+    <button id="loopbtn" class="mini-btn" title="Loop this movement">↻</button>
+    <div class="vol">
+      <span class="vol-ico">♪</span>
+      <input id="vol" type="range" min="0" max="1" step="0.01" value="0.85" />
+    </div>
+  </div>
+</div>
+
+<!-- ============ THEME DOCK ============ -->
+<div id="dock" class="dock">
+  <button id="dock-toggle" class="dock-toggle" title="Atmosphere">✦</button>
+  <div class="dock-panel">
+    <label class="dock-check dock-persong"><input type="checkbox" id="persong-toggle" checked /> shift world &amp; mood each song</label>
+    <div class="dock-label">atmosphere</div>
+    <div id="theme-list" class="theme-list"><!-- theme chips injected --></div>
+    <div class="dock-row">
+      <button id="theme-auto" class="theme-special" title="Adapts to the music's energy &amp; tempo">◐ Auto · adaptive</button>
+      <button id="theme-random" class="theme-special" title="Surprise me">⤬ Random</button>
+    </div>
+
+    <div class="dock-label dock-label-fx">fantasy worlds · background</div>
+    <div id="bg-list" class="bg-list"><!-- background thumbs injected --></div>
+
+    <div class="dock-label dock-label-fx">effects · mix freely</div>
+    <div id="fx-list" class="fx-list"><!-- effect pills injected --></div>
+    <div class="dock-row">
+      <button id="fx-surprise" class="theme-special" title="Random pleasing combination">✶ Surprise mix</button>
+      <button id="fx-clear" class="theme-special" title="Turn all effects off">○ Clear</button>
+    </div>
+
+    <label class="dock-check"><input type="checkbox" id="motion-toggle" checked /> motion &amp; creatures</label>
+  </div>
+</div>
+
+<div id="hint-auto" class="auto-hint"></div>
+
+<script src="tracks.js"></script>
+<script src="themes.js"></script>
+<script src="visuals.js"></script>
+<script src="app.js"></script>
+<script src="hummingbird.js"></script>
+</body>
+</html>

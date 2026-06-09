@@ -1,0 +1,26 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "**/.*",
+      "**/._*",
+      "**/node_modules/**",
+      "create_A_single_iridescent_hum.mp4"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(mp3)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=604800" },
+          { "key": "Accept-Ranges", "value": "bytes" }
+        ]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|png|webp|avif|svg)",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }]
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+._*
+
+# Local tooling / editor
+.claude/
+.vscode/
+
+# Firebase local state (safe to ignore; not needed in the repo)
+.firebase/
+
+# Raw, unused source footage (the site uses the processed hummingbird.mp4)
+create_A_single_iridescent_hum.mp4
+
+# Node (none used, but just in case)
+node_modules/
+npm-debug.log*

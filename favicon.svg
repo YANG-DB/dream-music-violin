@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#26224f"/>
+      <stop offset="55%" stop-color="#141232"/>
+      <stop offset="100%" stop-color="#0a0a1e"/>
+    </radialGradient>
+    <linearGradient id="aur" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8aa6ff"/>
+      <stop offset="50%" stop-color="#a98bff"/>
+      <stop offset="100%" stop-color="#9be7d4"/>
+    </linearGradient>
+    <radialGradient id="moon" cx="38%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cdd8ff"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- night sky -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#sky)"/>
+
+  <!-- aurora ribbons -->
+  <g filter="url(#glow)" opacity="0.85">
+    <path d="M4 40 Q20 26 32 36 T60 32" fill="none" stroke="url(#aur)" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+    <path d="M4 48 Q22 36 34 44 T60 42" fill="none" stroke="url(#aur)" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  </g>
+
+  <!-- crescent moon -->
+  <g filter="url(#glow)">
+    <path d="M44 16 a11 11 0 1 0 4 18 a9 9 0 1 1 -4 -18 z" fill="url(#moon)"/>
+  </g>
+
+  <!-- sparkles / stars -->
+  <g fill="#eaf0ff" filter="url(#glow)">
+    <path d="M20 18 l1.2 3 3 1.2 -3 1.2 -1.2 3 -1.2 -3 -3 -1.2 3 -1.2 z"/>
+    <circle cx="14" cy="30" r="1"/>
+    <circle cx="50" cy="46" r="1.1"/>
+    <circle cx="30" cy="24" r="0.8"/>
+  </g>
+
+  <!-- a butterfly drifting -->
+  <g filter="url(#glow)" transform="translate(38 46) rotate(12)">
+    <path d="M0 0 C-7 -7 -11 -2 -5 3 C-9 7 -3 8 0 2 Z" fill="#b9a6ff" opacity="0.95"/>
+    <path d="M0 0 C7 -7 11 -2 5 3 C9 7 3 8 0 2 Z" fill="#9be7d4" opacity="0.95"/>
+  </g>
+</svg>
