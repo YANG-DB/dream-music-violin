@@ -1,41 +1,46 @@
 // ============================================================================
-//  studio.js — an in-browser sound studio with per-segment automation.
-//  Controls: speed · volume/gain · smooth (warmth) · elevate (air).
-//  A song can be split into segments, each with its own settings, applied live
-//  as playback crosses them and baked into a .wav export. All saved locally.
+//  studio.js — a WavePad-style waveform sound editor.
+//  See the whole movement as a waveform, drag to select any part, and shape it
+//  independently (speed · volume · smooth · elevate). Edits apply live as the
+//  song plays and are baked into a .wav export. Everything saved locally.
 // ============================================================================
 (function () {
   const $ = (s) => document.querySelector(s);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   const DEFAULTS = { speed: 1, volume: 1, smooth: 0, elevate: 0 };
-  let global = Object.assign({}, DEFAULTS);   // whole-song values (shared)
+  let global = Object.assign({}, DEFAULTS);   // whole-song defaults (shared)
   let segMap = {};                            // { trackKey: [segments] }
-  let segs = [];                              // current track's segments (tiling)
-  let sel = -1;                              // editing target: -1 = whole song
-  let lastKey = null;                        // last applied active-param signature
+  let segs = [];                              // current track's parts (non-overlapping)
+  let selection = null;                       // { start, end } transient selection
+  let selIndex = -1;                          // selected segment index (-1 none)
+  let lastKey = null;                         // last applied active-param signature
 
   try { const s = JSON.parse(localStorage.getItem("dream-studio") || "null"); if (s) global = Object.assign(global, s); } catch (e) {}
-  try { const m = JSON.parse(localStorage.getItem("dream-segments") || "null"); if (m) segMap = m; } catch (e) {}
+  try { const m = JSON.parse(localStorage.getItem("dream-wave-segs") || "null"); if (m) segMap = m; } catch (e) {}
 
   const smoothCutoff = (v) => 20000 * Math.pow(1100 / 20000, v);
   const trackKey = () => (window.SoundCurrent && window.SoundCurrent.src) || null;
   const duration = () => (window.SoundAudio && window.SoundAudio.duration) || 0;
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const fmtClock = (s) => { s = Math.max(0, s || 0); return Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0"); };
 
-  function fmtClock(s) { s = Math.max(0, s || 0); return Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0"); }
-  function fmtSpeed(v) { return v.toFixed(2) + "×"; }
-  function fmtDb(v) { return (v > 0 ? "+" : "") + (Math.round(v * 10) / 10) + " dB"; }
+  // refs
+  const wrap = $("#ed-wave-wrap");
+  const canvas = $("#ed-wave");
+  const cx = canvas.getContext("2d");
+  const segLayer = $("#ed-segs");
+  const selEl = $("#ed-sel");
+  const playEl = $("#ed-play");
 
-  // the parameter set the sliders currently edit
-  function editing() { return (sel >= 0 && segs[sel]) ? segs[sel] : global; }
-  // the parameter set that applies at media-time t
+  // ---------------------------------------------------- param resolution
   function paramsAt(t) {
-    if (!segs.length) return global;
     for (const s of segs) if (t >= s.start && t < s.end) return s;
-    return segs[segs.length - 1];
+    return global;
   }
+  function activeSeg() { return (selIndex >= 0 && segs[selIndex]) ? segs[selIndex] : null; }
+  function shown() { return activeSeg() || global; }
 
-  // --------------------------------------------------- apply to the live graph
+  // ---------------------------------------------------- live graph
   function applyParams(p) {
     const a = window.SoundAudio;
     if (a && Math.abs(a.playbackRate - p.speed) > 1e-3) a.playbackRate = p.speed;
@@ -53,155 +58,267 @@
     localStorage.setItem("dream-studio", JSON.stringify(global));
     const k = trackKey();
     if (k) { if (segs.length) segMap[k] = segs; else delete segMap[k]; }
-    localStorage.setItem("dream-segments", JSON.stringify(segMap));
+    localStorage.setItem("dream-wave-segs", JSON.stringify(segMap));
   }
 
-  // --------------------------------------------------- sliders
+  // ---------------------------------------------------- sliders
+  const fmt = {
+    speed: (v) => v.toFixed(2) + "×",
+    volume: (v) => Math.round(v * 100) + "%",
+    smooth: (v) => Math.round(v * 100) + "%",
+    elevate: (v) => (v > 0 ? "+" : "") + (Math.round(v * 10) / 10) + " dB"
+  };
   function syncInputs() {
-    const e = editing();
-    $("#sx-speed").value = e.speed; $("#sx-vol").value = e.volume;
-    $("#sx-smooth").value = e.smooth; $("#sx-elevate").value = e.elevate;
+    const p = shown();
+    $("#ek-speed").value = p.speed; $("#ek-vol").value = p.volume;
+    $("#ek-smooth").value = p.smooth; $("#ek-elevate").value = p.elevate;
     syncLabels();
   }
   function syncLabels() {
-    const e = editing();
-    $("#sx-speed-val").textContent = fmtSpeed(e.speed);
-    $("#sx-vol-val").textContent = Math.round(e.volume * 100) + "%";
-    $("#sx-smooth-val").textContent = Math.round(e.smooth * 100) + "%";
-    $("#sx-elevate-val").textContent = fmtDb(e.elevate);
-    $("#sx-seg-label").textContent = (sel >= 0 && segs[sel])
-      ? fmtClock(segs[sel].start) + " – " + fmtClock(segs[sel].end)
-      : (segs.length ? "select a segment" : "whole song");
+    const p = shown();
+    $("#ek-speed-v").textContent = fmt.speed(p.speed);
+    $("#ek-vol-v").textContent = fmt.volume(p.volume);
+    $("#ek-smooth-v").textContent = fmt.smooth(p.smooth);
+    $("#ek-elevate-v").textContent = fmt.elevate(p.elevate);
+    const sl = $("#ed-sel-label");
+    if (selIndex >= 0 && segs[selIndex]) sl.textContent = "part · " + fmtClock(segs[selIndex].start) + " – " + fmtClock(segs[selIndex].end);
+    else if (selection) sl.textContent = "selection · " + fmtClock(selection.start) + " – " + fmtClock(selection.end);
+    else sl.textContent = "whole song";
   }
-  function bind(id, key) {
-    $(id).addEventListener("input", (e) => {
-      editing()[key] = parseFloat(e.target.value);
-      lastKey = null;            // force the live loop to re-apply
-      save(); syncLabels();
-    });
-  }
-  bind("#sx-speed", "speed"); bind("#sx-vol", "volume");
-  bind("#sx-smooth", "smooth"); bind("#sx-elevate", "elevate");
 
-  $("#sx-reset").addEventListener("click", () => {
-    Object.assign(editing(), DEFAULTS);
-    lastKey = null; save(); syncInputs(); status(sel >= 0 ? "segment flattened" : "flat · unprocessed");
-  });
-
-  // --------------------------------------------------- segments
-  function selectSeg(i) { sel = i; syncInputs(); renderTimeline(); }
-
-  function splitAtPlayhead() {
-    const dur = duration(); if (dur <= 0.5) { status("play the movement first"); return; }
-    const t = clamp(window.SoundAudio.currentTime, 0.05, dur - 0.05);
-    if (!segs.length) {
-      segs = [
-        Object.assign({ start: 0, end: t }, global),
-        Object.assign({ start: t, end: dur }, global)
-      ];
-    } else {
-      const i = segs.findIndex((s) => t > s.start + 0.05 && t < s.end - 0.05);
-      if (i < 0) { status("too close to a boundary"); return; }
-      const cur = segs[i];
-      const right = Object.assign({}, cur, { start: t, end: cur.end });
-      cur.end = t;
-      segs.splice(i + 1, 0, right);
-    }
-    save();
-    selectSeg(segs.findIndex((s) => t >= s.start && t < s.end));
-    status(segs.length + " segments");
-  }
-  function deleteSeg() {
-    if (sel < 0 || !segs.length) { status("select a segment first"); return; }
-    const i = sel;
-    if (segs.length <= 2) {                 // back to whole-song, keep the kept seg's values
-      const keep = segs[i === 0 ? 1 : 0];
-      Object.assign(global, { speed: keep.speed, volume: keep.volume, smooth: keep.smooth, elevate: keep.elevate });
-      segs = [];
-    } else if (i === 0) {
-      segs[1].start = 0; segs.splice(0, 1);
-    } else {
-      segs[i - 1].end = segs[i].end; segs.splice(i, 1);
-    }
-    sel = -1; lastKey = null; save(); syncInputs(); renderTimeline(); status("segment removed");
-  }
-  $("#sx-split").addEventListener("click", splitAtPlayhead);
-  $("#sx-del").addEventListener("click", deleteSeg);
-  $("#sx-clear").addEventListener("click", () => {
-    segs = []; sel = -1; lastKey = null; save(); syncInputs(); renderTimeline(); status("whole song");
-  });
-
-  // --------------------------------------------------- timeline render
-  const timeline = $("#sx-timeline");
-  function renderTimeline() {
-    const dur = duration() || 1;
-    timeline.querySelectorAll(".sx-seg-block").forEach((n) => n.remove());
-    timeline.classList.toggle("whole", segs.length === 0);
-    const blocks = segs.length ? segs : [{ start: 0, end: dur }];
-    blocks.forEach((s, i) => {
-      const b = document.createElement("div");
-      b.className = "sx-seg-block" + (segs.length && sel === i ? " sel" : "");
-      b.style.flexGrow = Math.max(0.02, (s.end - s.start));
-      if (segs.length) {
-        const sp = Math.round(s.speed * 100) / 100;
-        b.textContent = sp !== 1 ? sp + "×" : "";
-        b.addEventListener("click", (ev) => { ev.stopPropagation(); selectSeg(i); });
+  function editKey(key, val) {
+    if (selection) {
+      let seg = activeSeg();
+      const matches = seg && Math.abs(seg.start - selection.start) < 0.02 && Math.abs(seg.end - selection.end) < 0.02;
+      if (!matches) {
+        // carve the selection out of any overlapping parts and make a new one
+        segs = segs.filter((g) => g.end <= selection.start + 0.02 || g.start >= selection.end - 0.02);
+        seg = Object.assign({ start: selection.start, end: selection.end }, global, activeSeg() || {});
+        seg.start = selection.start; seg.end = selection.end;
+        segs.push(seg); segs.sort((a, b) => a.start - b.start);
+        selIndex = segs.indexOf(seg);
       }
-      timeline.insertBefore(b, $("#sx-playhead"));
-    });
+      seg[key] = val;
+    } else {
+      global[key] = val;
+    }
+    lastKey = null; save(); renderSegs(); syncLabels();
   }
-  // clicking the empty (whole-song) timeline selects the global set
-  timeline.addEventListener("click", () => { if (!segs.length) { sel = -1; syncInputs(); } });
+  [["#ek-speed", "speed"], ["#ek-vol", "volume"], ["#ek-smooth", "smooth"], ["#ek-elevate", "elevate"]]
+    .forEach(([id, key]) => $(id).addEventListener("input", (e) => editKey(key, parseFloat(e.target.value))));
 
-  // --------------------------------------------------- per-track load
+  // ---------------------------------------------------- waveform
+  const peakCache = {};
+  let peaks = null;
+  let decodeCtx = null;
+  function getCtx() { return (window.SoundFX && window.SoundFX.ctx) || (decodeCtx || (decodeCtx = new (window.AudioContext || window.webkitAudioContext)())); }
+
+  async function decode(src) {
+    const resp = await fetch(src);
+    const arr = await resp.arrayBuffer();
+    return await getCtx().decodeAudioData(arr);
+  }
+  function computePeaks(buf, n) {
+    const len = buf.length, per = Math.max(1, Math.floor(len / n));
+    const ch0 = buf.getChannelData(0), ch1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : null;
+    const out = new Float32Array(n);
+    for (let b = 0; b < n; b++) {
+      let mx = 0; const s = b * per, e = Math.min(len, s + per);
+      for (let i = s; i < e; i++) {
+        let v = ch0[i]; if (v < 0) v = -v;
+        if (ch1) { let v2 = ch1[i]; if (v2 < 0) v2 = -v2; if (v2 > v) v = v2; }
+        if (v > mx) mx = v;
+      }
+      out[b] = mx;
+    }
+    return out;
+  }
+  async function loadWaveform() {
+    const cur = window.SoundCurrent;
+    peaks = null; drawWave();
+    if (!cur || !cur.src) { status("play a movement to see its waveform"); return; }
+    if (peakCache[cur.src]) { peaks = peakCache[cur.src]; drawWave(); status(""); return; }
+    status("analysing…");
+    try {
+      const buf = await decode(cur.src);
+      peaks = computePeaks(buf, 2000);
+      peakCache[cur.src] = peaks;
+      drawWave(); status("");
+    } catch (e) { console.warn("waveform decode failed", e); status("waveform unavailable"); }
+  }
+  function drawWave() {
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    if (!W || !H) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx.clearRect(0, 0, W, H);
+    if (!peaks) return;
+    const mid = H / 2, n = peaks.length;
+    const grd = cx.createLinearGradient(0, 0, 0, H);
+    grd.addColorStop(0, "rgba(150,170,255,0.85)");
+    grd.addColorStop(0.5, "rgba(120,205,210,0.6)");
+    grd.addColorStop(1, "rgba(150,170,255,0.85)");
+    cx.strokeStyle = grd; cx.lineWidth = 1;
+    cx.beginPath();
+    for (let x = 0; x < W; x++) {
+      const a = peaks[Math.floor(x / W * n)] || 0;
+      const amp = Math.max(0.5, a * mid * 0.92);
+      cx.moveTo(x + 0.5, mid - amp); cx.lineTo(x + 0.5, mid + amp);
+    }
+    cx.stroke();
+  }
+
+  // ---------------------------------------------------- overlays
+  function pct(t) { const d = duration() || 1; return clamp(t / d, 0, 1) * 100; }
+  function renderSegs() {
+    segLayer.querySelectorAll(".ed-seg").forEach((n) => n.remove());
+    segs.forEach((s, i) => {
+      const el = document.createElement("div");
+      el.className = "ed-seg" + (i === selIndex ? " sel" : "");
+      el.style.left = pct(s.start) + "%";
+      el.style.width = (pct(s.end) - pct(s.start)) + "%";
+      const bits = [];
+      if (s.speed !== 1) bits.push(s.speed.toFixed(2) + "×");
+      if (s.volume !== 1) bits.push(Math.round(s.volume * 100) + "%");
+      if (s.smooth) bits.push("smooth");
+      if (s.elevate) bits.push("air");
+      el.innerHTML = '<span class="ed-seg-tag">' + (bits.join(" · ") || "part") + "</span>";
+      el.addEventListener("pointerdown", (ev) => {
+        ev.stopPropagation();
+        selection = { start: s.start, end: s.end }; selIndex = i;
+        showSelection(); renderSegs(); syncInputs();
+      });
+      segLayer.appendChild(el);
+    });
+    $("#ed-hint").style.opacity = (segs.length || selection) ? 0 : 1;
+  }
+  function showSelection() {
+    if (!selection) { selEl.style.display = "none"; return; }
+    selEl.style.display = "block";
+    selEl.style.left = pct(selection.start) + "%";
+    selEl.style.width = (pct(selection.end) - pct(selection.start)) + "%";
+  }
+
+  // ---------------------------------------------------- pointer (select / seek)
+  let dragging = false, downX = 0, downT = 0;
+  function xToTime(clientX) {
+    const r = wrap.getBoundingClientRect();
+    return clamp((clientX - r.left) / r.width, 0, 1) * (duration() || 0);
+  }
+  wrap.addEventListener("pointerdown", (e) => {
+    if (!duration()) return;
+    dragging = true; downX = e.clientX; downT = xToTime(e.clientX);
+    selection = { start: downT, end: downT }; selIndex = -1;
+    wrap.setPointerCapture(e.pointerId);
+    showSelection();
+  });
+  wrap.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const t = xToTime(e.clientX);
+    selection = { start: Math.min(downT, t), end: Math.max(downT, t) };
+    showSelection(); syncLabels();
+  });
+  wrap.addEventListener("pointerup", (e) => {
+    if (!dragging) return;
+    dragging = false;
+    const moved = Math.abs(e.clientX - downX);
+    if (moved < 5) {                       // a click -> seek, clear selection
+      if (window.SoundAudio) window.SoundAudio.currentTime = downT;
+      selection = null; selIndex = -1; showSelection();
+    } else {
+      // snap onto an existing identical part if it matches
+      const i = segs.findIndex((s) => Math.abs(s.start - selection.start) < 0.05 && Math.abs(s.end - selection.end) < 0.05);
+      selIndex = i;
+    }
+    renderSegs(); syncInputs();
+  });
+
+  // ---------------------------------------------------- buttons
+  $("#ed-remove").addEventListener("click", () => {
+    if (selIndex >= 0) { segs.splice(selIndex, 1); selIndex = -1; }
+    else if (selection) { segs = segs.filter((g) => g.end <= selection.start + 0.02 || g.start >= selection.end - 0.02); }
+    else { status("select a part first"); return; }
+    lastKey = null; save(); renderSegs(); syncInputs(); status("part cleared");
+  });
+  $("#ed-clear").addEventListener("click", () => {
+    segs = []; selection = null; selIndex = -1;
+    lastKey = null; save(); showSelection(); renderSegs(); syncInputs(); status("all edits removed");
+  });
+  $("#ed-close").addEventListener("click", close);
+  $("#studio-toggle").addEventListener("click", () => $("#studio").classList.contains("open") ? close() : open());
+  $("#ed-transport").addEventListener("click", () => window.PlayerCtl && window.PlayerCtl.toggle());
+  $("#ed-prev").addEventListener("click", () => window.PlayerCtl && window.PlayerCtl.prev());
+  $("#ed-next").addEventListener("click", () => window.PlayerCtl && window.PlayerCtl.next());
+  $("#ed-save").addEventListener("click", exportWav);
+
+  function open() {
+    $("#studio").classList.add("open");
+    document.body.classList.add("editing");
+    requestAnimationFrame(() => { drawWave(); renderSegs(); showSelection(); });
+    if (!peaks) loadWaveform();
+  }
+  function close() {
+    $("#studio").classList.remove("open");
+    document.body.classList.remove("editing");
+  }
+
+  function status(msg, busy) { const el = $("#ed-status"); el.textContent = msg || ""; el.classList.toggle("busy", !!busy); }
+
+  // ---------------------------------------------------- per-track load
   function loadTrack() {
     const k = trackKey(), dur = duration();
     segs = (k && segMap[k]) ? segMap[k].map((s) => Object.assign({}, s)) : [];
-    if (segs.length && dur) { segs[segs.length - 1].end = Math.max(segs[segs.length - 1].start + 0.1, dur); }
-    sel = -1; lastKey = null; syncInputs(); renderTimeline();
+    if (dur) segs.forEach((s) => { s.end = Math.min(s.end, dur); });
+    segs = segs.filter((s) => s.end - s.start > 0.05);
+    selection = null; selIndex = -1; lastKey = null;
+    const cur = window.SoundCurrent;
+    $("#ed-track").textContent = cur ? (cur.album + " · " + cur.name) : "—";
+    syncInputs(); showSelection(); renderSegs();
+    if ($("#studio").classList.contains("open")) loadWaveform();
   }
 
-  // --------------------------------------------------- live loop
+  // ---------------------------------------------------- transport icon + tick
+  function setIcon() { $("#ed-transport").textContent = (window.PlayerCtl && !window.PlayerCtl.isPaused()) ? "❚❚" : "►"; }
+  if (window.SoundAudio) {
+    window.SoundAudio.addEventListener("loadedmetadata", loadTrack);
+    window.SoundAudio.addEventListener("play", () => { lastKey = null; setIcon(); });
+    window.SoundAudio.addEventListener("pause", setIcon);
+  }
+  window.addEventListener("resize", () => { if ($("#studio").classList.contains("open")) { drawWave(); renderSegs(); showSelection(); } }, { passive: true });
+
   function tick() {
     const a = window.SoundAudio;
     if (a) {
       const t = a.currentTime || 0;
-      const p = paramsAt(t);
-      const s = sig(p);
+      const p = paramsAt(t), s = sig(p);
       if (s !== lastKey) { applyParams(p); lastKey = s; }
-      const dur = duration();
-      if (dur) {
-        const w = timeline.clientWidth;
-        $("#sx-playhead").style.left = clamp(t / dur, 0, 1) * w + "px";
-        // live highlight of the active segment
-        const ai = segs.length ? segs.findIndex((g) => t >= g.start && t < g.end) : -1;
-        const blocks = timeline.querySelectorAll(".sx-seg-block");
-        blocks.forEach((b, i) => b.classList.toggle("active", i === ai));
-      }
+      if ($("#studio").classList.contains("open") && duration()) playEl.style.left = pct(t) + "%";
     }
     requestAnimationFrame(tick);
   }
 
-  // --------------------------------------------------- status + panel
-  function status(msg, busy) { const el = $("#sx-status"); el.textContent = msg || ""; el.classList.toggle("busy", !!busy); }
-  $("#studio-toggle").addEventListener("click", () => $("#studio").classList.toggle("open"));
-
-  if (window.SoundAudio) {
-    window.SoundAudio.addEventListener("loadedmetadata", loadTrack);
-    window.SoundAudio.addEventListener("play", () => { lastKey = null; });
+  // ---------------------------------------------------- WAV export
+  function buildPieces(dur) {
+    const sorted = segs.slice().sort((a, b) => a.start - b.start);
+    const pieces = []; let t = 0;
+    for (const s of sorted) {
+      const st = clamp(s.start, 0, dur), en = clamp(s.end, st, dur);
+      if (st > t + 0.001) pieces.push(Object.assign({ start: t, end: st }, global));
+      pieces.push({ start: st, end: en, speed: s.speed, volume: s.volume, smooth: s.smooth, elevate: s.elevate });
+      t = en;
+    }
+    if (t < dur - 0.001) pieces.push(Object.assign({ start: t, end: dur }, global));
+    if (!pieces.length) pieces.push(Object.assign({ start: 0, end: dur }, global));
+    return pieces;
   }
-
-  // --------------------------------------------------- WAV export (with segments)
-  $("#sx-save").addEventListener("click", exportWav);
-
-  function renderSlice(ctxClass, buf, seg) {
+  function renderPiece(buf, seg) {
     const sr = buf.sampleRate;
     const s0 = Math.floor(seg.start * sr), s1 = Math.min(buf.length, Math.floor(seg.end * sr));
     const n = Math.max(1, s1 - s0);
-    const slice = (ctxClass._tmp).createBuffer(buf.numberOfChannels, n, sr);
+    const off = new OfflineAudioContext(buf.numberOfChannels, Math.max(1, Math.ceil(n / seg.speed)), sr);
+    const slice = off.createBuffer(buf.numberOfChannels, n, sr);
     for (let c = 0; c < buf.numberOfChannels; c++) slice.getChannelData(c).set(buf.getChannelData(c).subarray(s0, s1));
-    const outLen = Math.max(1, Math.ceil(n / seg.speed));
-    const off = new OfflineAudioContext(buf.numberOfChannels, outLen, sr);
     const src = off.createBufferSource(); src.buffer = slice; src.playbackRate.value = seg.speed;
     const g = off.createGain(); g.gain.value = seg.volume;
     const lp = off.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = smoothCutoff(seg.smooth); lp.Q.value = 0.7;
@@ -212,49 +329,32 @@
     src.start(0);
     return off.startRendering();
   }
-
   async function exportWav() {
     const cur = window.SoundCurrent;
     if (!cur || !cur.src) { status("play a movement first"); return; }
     status("rendering…", true);
     try {
-      const resp = await fetch(cur.src);
-      const arr = await resp.arrayBuffer();
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      const tmp = new Ctx();
-      const buf = await tmp.decodeAudioData(arr);
+      const buf = await decode(cur.src);
       const dur = buf.duration;
-      const parts = segs.length
-        ? segs.map((s) => ({ start: s.start, end: Math.min(s.end, dur), speed: s.speed, volume: s.volume, smooth: s.smooth, elevate: s.elevate }))
-        : [Object.assign({ start: 0, end: dur }, global)];
-
-      const helper = { _tmp: tmp };
+      const pieces = buildPieces(dur);
       const rendered = [];
-      for (const seg of parts) rendered.push(await renderSlice(helper, buf, seg));
-      tmp.close();
-
-      // concatenate the rendered segments
+      for (const p of pieces) rendered.push(await renderPiece(buf, p));
       const numCh = buf.numberOfChannels, sr = buf.sampleRate;
       const total = rendered.reduce((a, r) => a + r.length, 0);
-      const out = new OfflineAudioContext(numCh, total, sr); // only to hold a buffer
-      const final = out.createBuffer(numCh, total, sr);
+      const holder = new OfflineAudioContext(numCh, Math.max(1, total), sr);
+      const final = holder.createBuffer(numCh, total, sr);
       let off = 0;
-      for (const r of rendered) {
-        for (let c = 0; c < numCh; c++) final.getChannelData(c).set(r.getChannelData(c), off);
-        off += r.length;
-      }
-
+      for (const r of rendered) { for (let c = 0; c < numCh; c++) final.getChannelData(c).set(r.getChannelData(c), off); off += r.length; }
       const blob = new Blob([encodeWAV(final)], { type: "audio/wav" });
       const url = URL.createObjectURL(blob);
       const safe = ((cur.album || "") + " - " + (cur.name || "movement")).replace(/[^a-z0-9 _-]/gi, "").trim() || "movement";
       const a = document.createElement("a");
-      a.href = url; a.download = safe + (segs.length ? " (segmented)" : " (studio)") + ".wav";
+      a.href = url; a.download = safe + (segs.length ? " (edited)" : " (studio)") + ".wav";
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
       status("saved · " + safe + ".wav");
     } catch (e) { console.warn("WAV export failed", e); status("export failed (see console)"); }
   }
-
   function encodeWAV(ab) {
     const numCh = ab.numberOfChannels, sr = ab.sampleRate, len = ab.length;
     const blockAlign = numCh * 2, dataSize = len * blockAlign;
@@ -269,15 +369,12 @@
     const chans = [];
     for (let c = 0; c < numCh; c++) chans.push(ab.getChannelData(c));
     for (let i = 0; i < len; i++)
-      for (let c = 0; c < numCh; c++) {
-        let v = Math.max(-1, Math.min(1, chans[c][i]));
-        view.setInt16(p, v < 0 ? v * 0x8000 : v * 0x7FFF, true); p += 2;
-      }
+      for (let c = 0; c < numCh; c++) { let v = Math.max(-1, Math.min(1, chans[c][i])); view.setInt16(p, v < 0 ? v * 0x8000 : v * 0x7FFF, true); p += 2; }
     return view.buffer;
   }
 
-  // --------------------------------------------------- init
+  // ---------------------------------------------------- init
   window.Studio = { apply: () => { lastKey = null; } };
-  syncInputs(); renderTimeline();
+  syncInputs(); setIcon();
   requestAnimationFrame(tick);
 })();

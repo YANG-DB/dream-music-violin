@@ -130,53 +130,51 @@
 
 <div id="hint-auto" class="auto-hint"></div>
 
-<!-- ============ SOUND STUDIO ============ -->
+<!-- ============ SOUND EDITOR (waveform) ============ -->
 <div id="studio" class="studio">
-  <button id="studio-toggle" class="studio-toggle" title="Sound studio">🎚</button>
-  <div class="studio-panel">
-    <div class="dock-label">sound studio</div>
+  <button id="studio-toggle" class="studio-toggle" title="Sound editor">🎚</button>
 
-    <div class="sx">
-      <div class="sx-row"><span class="sx-name">speed</span><span id="sx-speed-val" class="sx-val">1.00×</span></div>
-      <input id="sx-speed" type="range" min="0.5" max="1.5" step="0.01" value="1" />
-      <div class="sx-hint">slower ⟷ faster · ride it through a section</div>
+  <section class="editor" aria-label="sound editor">
+    <header class="ed-head">
+      <span class="ed-title">sound editor</span>
+      <span id="ed-track" class="ed-track">—</span>
+      <span id="ed-status" class="ed-status"></span>
+      <button id="ed-close" class="ed-close" title="Close editor">✕</button>
+    </header>
+
+    <div class="ed-wave-wrap" id="ed-wave-wrap">
+      <canvas id="ed-wave" class="ed-wave"></canvas>
+      <div id="ed-segs" class="ed-segs"></div>
+      <div id="ed-sel" class="ed-sel"></div>
+      <div id="ed-play" class="ed-playhead"></div>
+      <div id="ed-hint" class="ed-wave-hint">drag across the waveform to select a part · click to seek</div>
     </div>
 
-    <div class="sx">
-      <div class="sx-row"><span class="sx-name">volume</span><span id="sx-vol-val" class="sx-val">100%</span></div>
-      <input id="sx-vol" type="range" min="0" max="2" step="0.01" value="1" />
-      <div class="sx-hint">reduce ⟷ increase (boost past 100%)</div>
-    </div>
-
-    <div class="sx">
-      <div class="sx-row"><span class="sx-name">smooth</span><span id="sx-smooth-val" class="sx-val">0%</span></div>
-      <input id="sx-smooth" type="range" min="0" max="1" step="0.01" value="0" />
-      <div class="sx-hint">soften the edges · warmer tone</div>
-    </div>
-
-    <div class="sx">
-      <div class="sx-row"><span class="sx-name">elevate</span><span id="sx-elevate-val" class="sx-val">0 dB</span></div>
-      <input id="sx-elevate" type="range" min="0" max="12" step="0.1" value="0" />
-      <div class="sx-hint">lift the air &amp; presence</div>
-    </div>
-
-    <div class="sx-seg">
-      <div class="sx-row"><span class="sx-name">segments</span><span id="sx-seg-label" class="sx-val">whole song</span></div>
-      <div id="sx-timeline" class="sx-timeline whole"><div id="sx-playhead" class="sx-playhead"></div></div>
-      <div class="studio-row">
-        <button id="sx-split" class="theme-special" title="Cut the song at the playhead">✂ Split</button>
-        <button id="sx-del" class="theme-special" title="Remove the selected segment">🗑 Seg</button>
-        <button id="sx-clear" class="theme-special" title="Remove all segments">⟲ Clear</button>
+    <div class="ed-controls">
+      <div class="ed-knobs">
+        <label class="ed-knob"><span class="ek-top"><span>speed</span><span id="ek-speed-v">1.00×</span></span>
+          <input id="ek-speed" type="range" min="0.5" max="1.5" step="0.01" value="1" /></label>
+        <label class="ed-knob"><span class="ek-top"><span>volume</span><span id="ek-vol-v">100%</span></span>
+          <input id="ek-vol" type="range" min="0" max="2" step="0.01" value="1" /></label>
+        <label class="ed-knob"><span class="ek-top"><span>smooth</span><span id="ek-smooth-v">0%</span></span>
+          <input id="ek-smooth" type="range" min="0" max="1" step="0.01" value="0" /></label>
+        <label class="ed-knob"><span class="ek-top"><span>elevate</span><span id="ek-elevate-v">0 dB</span></span>
+          <input id="ek-elevate" type="range" min="0" max="12" step="0.1" value="0" /></label>
       </div>
-      <div class="sx-hint">the sliders edit the selected segment · play to hear it follow</div>
-    </div>
 
-    <div class="studio-row">
-      <button id="sx-reset" class="theme-special" title="Back to flat / unprocessed (selected segment)">○ Reset</button>
-      <button id="sx-save" class="theme-special" title="Render this movement (with segments) and download a .wav">⤓ Save .wav</button>
+      <div class="ed-side">
+        <div id="ed-sel-label" class="ed-sel-label">whole song</div>
+        <div class="ed-btns">
+          <button id="ed-transport" class="ed-btn ed-play-btn" title="Play / pause">►</button>
+          <button id="ed-prev" class="ed-btn" title="Previous movement">⏮</button>
+          <button id="ed-next" class="ed-btn" title="Next movement">⏭</button>
+          <button id="ed-remove" class="ed-btn" title="Clear the selected part back to default">⌫ part</button>
+          <button id="ed-clear" class="ed-btn" title="Remove every edit on this song">⟲ all</button>
+          <button id="ed-save" class="ed-btn ed-save-btn" title="Render this movement (with all edits) and download a .wav">⤓ .wav</button>
+        </div>
+      </div>
     </div>
-    <div id="sx-status" class="sx-status"></div>
-  </div>
+  </section>
 </div>
 
 <script src="tracks.js"></script>

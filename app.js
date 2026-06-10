@@ -465,6 +465,14 @@
     window.addEventListener(ev, wake, { passive: true }));
   wake();
 
+  // expose transport for the sound editor
+  window.PlayerCtl = {
+    toggle: togglePlay,
+    next: () => step(1),
+    prev: () => step(-1),
+    isPaused: () => audio.paused
+  };
+
   // ============================ boot ============================
   Dream.init($("#dream"));
   syncThemeUI();
