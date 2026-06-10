@@ -62,10 +62,10 @@
   $("#enter").addEventListener("click", () => {
     ensureAudioGraph();
     if (actx && actx.state === "suspended") actx.resume();
-    if (perSong) advanceWorld();    // open onto a first world & atmosphere
-    else Dream.setAuto(true);       // otherwise start in adaptive mode
+    if (!perSong) Dream.setAuto(true);   // adaptive mode when not per-song
     syncThemeUI();
     show("gallery");
+    play(ALBUMS[0], 0);             // begin the first album right away
   });
 
   // ---- build gallery cards ----
@@ -370,19 +370,21 @@
     $$(".bg-thumb").forEach(b => b.classList.toggle("active", b.dataset.bg === bgChoice));
   }
 
-  // ---- per-song: shift world + atmosphere together ----
+  // ---- per-song: step through the video worlds, one after another ----
+  const VIDEO_BGS = BACKGROUNDS.filter((b) => b.type === "video");
+  let videoIdx = -1;
   const persongEl = $("#persong-toggle");
   persongEl.checked = perSong;
   function advanceWorld() {
-    let pick;
-    do { pick = BACKGROUNDS[Math.floor(Math.random() * BACKGROUNDS.length)]; }
-    while (BACKGROUNDS.length > 1 && pick.key === lastWorldKey);
+    const list = VIDEO_BGS.length ? VIDEO_BGS : BACKGROUNDS;
+    videoIdx = (videoIdx + 1) % list.length;     // next video in sequence
+    const pick = list[videoIdx];
     lastWorldKey = pick.key;
     Dream.setAuto(false);
     Dream.setBackground(pick.key);   bgChoice = pick.key;
     Dream.setTheme(pick.theme);      applyAccent(pick.theme);
     syncBgUI(); syncThemeUI();
-    toast("world " + pick.label + " · " + THEMES[pick.theme].label.toLowerCase());
+    toast("world · " + pick.label + " · " + THEMES[pick.theme].label.toLowerCase());
   }
   function disablePerSong() {
     perSong = false;
