@@ -384,6 +384,28 @@ body { position: relative; }
 .sx-hint { font-size: 10px; letter-spacing: 0.08em; color: var(--muted); margin-top: 4px; }
 .studio-row { display: flex; gap: 8px; margin-top: 4px; }
 .studio-row .theme-special { flex: 1; }
+
+/* segment timeline */
+.sx-seg { margin-top: 6px; margin-bottom: 14px; }
+.sx-timeline {
+  position: relative; display: flex; gap: 2px; height: 32px; margin: 8px 0;
+  border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.05); cursor: pointer;
+}
+.sx-seg-block {
+  position: relative; min-width: 4px; background: rgba(138,166,255,0.18);
+  border-top: 2px solid transparent; transition: background 0.3s;
+  display: flex; align-items: flex-end; justify-content: center;
+  font-size: 8.5px; color: var(--muted); overflow: hidden; user-select: none;
+}
+.sx-seg-block:hover { background: rgba(138,166,255,0.32); }
+.sx-seg-block.sel { background: rgba(138,166,255,0.42); box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--text); }
+.sx-seg-block.active { border-top-color: var(--accent); }
+.sx-timeline.whole .sx-seg-block { background: rgba(255,255,255,0.08); }
+.sx-timeline.whole .sx-seg-block.sel { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.4); }
+.sx-playhead {
+  position: absolute; top: 0; bottom: 0; width: 2px; left: 0; background: #fff;
+  box-shadow: 0 0 8px var(--accent); pointer-events: none; z-index: 2;
+}
 .sx-status { font-size: 11px; color: var(--muted); margin-top: 10px; min-height: 14px; font-style: italic; }
 .sx-status.busy { color: var(--accent); }
 

@@ -160,9 +160,20 @@
       <div class="sx-hint">lift the air &amp; presence</div>
     </div>
 
+    <div class="sx-seg">
+      <div class="sx-row"><span class="sx-name">segments</span><span id="sx-seg-label" class="sx-val">whole song</span></div>
+      <div id="sx-timeline" class="sx-timeline whole"><div id="sx-playhead" class="sx-playhead"></div></div>
+      <div class="studio-row">
+        <button id="sx-split" class="theme-special" title="Cut the song at the playhead">✂ Split</button>
+        <button id="sx-del" class="theme-special" title="Remove the selected segment">🗑 Seg</button>
+        <button id="sx-clear" class="theme-special" title="Remove all segments">⟲ Clear</button>
+      </div>
+      <div class="sx-hint">the sliders edit the selected segment · play to hear it follow</div>
+    </div>
+
     <div class="studio-row">
-      <button id="sx-reset" class="theme-special" title="Back to flat / unprocessed">○ Reset</button>
-      <button id="sx-save" class="theme-special" title="Render this movement with the effects and download a .wav">⤓ Save .wav</button>
+      <button id="sx-reset" class="theme-special" title="Back to flat / unprocessed (selected segment)">○ Reset</button>
+      <button id="sx-save" class="theme-special" title="Render this movement (with segments) and download a .wav">⤓ Save .wav</button>
     </div>
     <div id="sx-status" class="sx-status"></div>
   </div>
