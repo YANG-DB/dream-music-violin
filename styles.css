@@ -38,14 +38,14 @@ body { position: relative; }
 /* ---------- Hummingbird ---------- */
 .hummingbird {
   position: fixed; top: 0; left: 0;
-  width: clamp(190px, 28vmin, 400px); height: auto;
+  width: clamp(150px, 22vmin, 320px); height: auto;
   z-index: 2;                       /* above the dreamscape, below the UI */
   pointer-events: none;
   mix-blend-mode: screen;           /* pure-black bg vanishes over the dark scene */
-  opacity: 0;                       /* JS fades it in/out */
+  opacity: 0;                       /* JS fades it in/out (kept faint) */
   transform: translate3d(-9999px, 0, 0);
   will-change: transform, opacity;
-  filter: drop-shadow(0 6px 26px rgba(120,150,255,0.18));
+  filter: drop-shadow(0 6px 22px rgba(120,150,255,0.1));
 }
 @media (prefers-reduced-motion: reduce) { .hummingbird { display: none; } }
 

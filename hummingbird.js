@@ -23,14 +23,19 @@
   function measure() { ow = el.offsetWidth || 320; oh = el.offsetHeight || ow * (200 / 260); }
   window.addEventListener("resize", () => { W = innerWidth; H = innerHeight; measure(); }, { passive: true });
 
+  // ---- appearance / rarity ----
+  const MAX_OP = 0.32;           // peak opacity — kept faint / barely there
+  const VISIT = [5, 10];         // how long a visit lasts (s)
+  const ABSENCE = [30, 80];      // how long it stays gone between visits (s)
+
   // ---- flight state ----
   let x = -400, y = 0;            // bird centre (px)
   let tx = 0, ty = 0;             // current waypoint
   let depth = 1, tdepth = 1;      // size / distance
   let facing = 1;                 // -1 mirrors (source bird faces LEFT)
   let flipping = false, flipOp = 1, lastFlip = 0;   // direction-change fade
-  let op = 0, opTarget = 1;       // opacity now / target
-  let away = false;
+  let op = 0, opTarget = 0;       // opacity now / target (starts hidden)
+  let away = true, hiddenUntil = 0;
   let last = 0, waypointAt = 0, nextEvent = 0, inited = false;
 
   function pickWaypoint(now) {
@@ -39,7 +44,7 @@
     tdepth = rand(0.72, 1.28);
     waypointAt = now + rand(2.2, 4.6);
   }
-  function scheduleFade(now) { nextEvent = now + rand(11, 21); }   // when to drift away next
+  function scheduleVisitEnd(now) { nextEvent = now + rand(VISIT[0], VISIT[1]); }   // end this visit soon
 
   function enterFromEdge() {
     const side = Math.floor(rand(0, 4));
@@ -52,7 +57,8 @@
   function frame(ms) {
     const now = ms / 1000;
     if (!inited) {
-      measure(); enterFromEdge(); pickWaypoint(now); scheduleFade(now);
+      measure(); enterFromEdge(); pickWaypoint(now);
+      hiddenUntil = now + rand(8, 20);    // hold off the first appearance a while
       last = now; inited = true;
     }
     let dt = now - last; last = now;
@@ -63,11 +69,14 @@
     try { if (window.Dream && Dream.signals) energy = Dream.signals().energy || 0; } catch (e) { /* ignore */ }
     const speedK = 1 + energy * 1.4;
 
-    // schedule a "fade away & return" now and then
+    // a brief visit, then a long absence before it drifts back in
     if (!away && now > nextEvent) { away = true; opTarget = 0; }
-    if (away && op < 0.025) {       // fully faded -> reappear somewhere new
-      enterFromEdge(); pickWaypoint(now);
-      away = false; opTarget = 1; scheduleFade(now);
+    if (away && op < 0.02) {
+      if (hiddenUntil === 0) hiddenUntil = now + rand(ABSENCE[0], ABSENCE[1]);  // begin the long absence
+      if (now > hiddenUntil) {                 // time to visit again, somewhere new
+        enterFromEdge(); pickWaypoint(now);
+        away = false; opTarget = MAX_OP; hiddenUntil = 0; scheduleVisitEnd(now);
+      }
     }
 
     // choose a fresh waypoint when reached or after a while
