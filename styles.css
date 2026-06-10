@@ -404,7 +404,17 @@ body { position: relative; }
 }
 .ed-seg:hover { background: rgba(138,166,255,0.26); }
 .ed-seg.sel { background: rgba(138,166,255,0.3); box-shadow: inset 0 0 0 1.5px var(--accent); }
-.ed-seg-tag { font-size: 9px; letter-spacing: 0.05em; color: var(--text); padding: 3px 5px; background: rgba(10,12,28,0.55); border-radius: 0 0 6px 0; white-space: nowrap; }
+.ed-seg.active { background: rgba(155,231,212,0.26); border-left-color: #9be7d4; border-right-color: #9be7d4; box-shadow: inset 0 0 22px rgba(155,231,212,0.3); }
+.ed-seg-tag { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 9px; letter-spacing: 0.05em; color: var(--text); padding: 3px 6px; background: rgba(10,12,28,0.6); border-radius: 0 0 6px 6px; white-space: nowrap; pointer-events: none; }
+/* draggable boundary handles + time marks */
+.ed-handle { position: absolute; top: 0; bottom: 0; width: 9px; cursor: ew-resize; background: rgba(255,255,255,0.22); z-index: 2; }
+.ed-handle:hover, .ed-handle:active { background: var(--accent); }
+.ed-handle.left { left: -1px; border-radius: 4px 0 0 4px; }
+.ed-handle.right { right: -1px; border-radius: 0 4px 4px 0; }
+.ed-seg-time { position: absolute; bottom: 2px; font-size: 8.5px; font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.75); pointer-events: none; padding: 0 2px; }
+.ed-seg-time.start { left: 3px; }
+.ed-seg-time.end { right: 3px; }
+.ed-now { font-size: 11px; letter-spacing: 0.05em; color: #9be7d4; font-style: italic; white-space: nowrap; }
 .ed-sel {
   position: absolute; top: 0; bottom: 0; left: 0; width: 0; display: none;
   background: rgba(255,255,255,0.1); border-left: 1px dashed rgba(255,255,255,0.6); border-right: 1px dashed rgba(255,255,255,0.6);

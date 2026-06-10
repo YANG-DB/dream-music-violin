@@ -15,6 +15,9 @@
   let selection = null;                       // { start, end } transient selection
   let selIndex = -1;                          // selected segment index (-1 none)
   let lastKey = null;                         // last applied active-param signature
+  let lastActive = -2;                        // segment index currently under the playhead
+  let handleDrag = null;                      // { i, edge } while dragging a boundary
+  const MIN_SEG = 0.2;                        // shortest part (seconds)
 
   try { const s = JSON.parse(localStorage.getItem("dream-studio") || "null"); if (s) global = Object.assign(global, s); } catch (e) {}
   try { const m = JSON.parse(localStorage.getItem("dream-wave-segs") || "null"); if (m) segMap = m; } catch (e) {}
@@ -171,28 +174,68 @@
 
   // ---------------------------------------------------- overlays
   function pct(t) { const d = duration() || 1; return clamp(t / d, 0, 1) * 100; }
+  function describe(p) {
+    const b = [];
+    if (p.speed !== 1) b.push(p.speed.toFixed(2) + "×");
+    if (p.volume !== 1) b.push(Math.round(p.volume * 100) + "%");
+    if (p.smooth) b.push("smooth");
+    if (p.elevate) b.push("+air");
+    return b.length ? b.join(" · ") : "default";
+  }
   function renderSegs() {
     segLayer.querySelectorAll(".ed-seg").forEach((n) => n.remove());
+    const tNow = (window.SoundAudio && window.SoundAudio.currentTime) || 0;
     segs.forEach((s, i) => {
       const el = document.createElement("div");
-      el.className = "ed-seg" + (i === selIndex ? " sel" : "");
+      const isActive = tNow >= s.start && tNow < s.end;
+      el.className = "ed-seg" + (i === selIndex ? " sel" : "") + (isActive ? " active" : "");
       el.style.left = pct(s.start) + "%";
       el.style.width = (pct(s.end) - pct(s.start)) + "%";
-      const bits = [];
-      if (s.speed !== 1) bits.push(s.speed.toFixed(2) + "×");
-      if (s.volume !== 1) bits.push(Math.round(s.volume * 100) + "%");
-      if (s.smooth) bits.push("smooth");
-      if (s.elevate) bits.push("air");
-      el.innerHTML = '<span class="ed-seg-tag">' + (bits.join(" · ") || "part") + "</span>";
+      el.innerHTML =
+        '<span class="ed-handle left" data-edge="left"></span>' +
+        '<span class="ed-seg-tag">' + describe(s) + "</span>" +
+        '<span class="ed-seg-time start">' + fmtClock(s.start) + "</span>" +
+        '<span class="ed-seg-time end">' + fmtClock(s.end) + "</span>" +
+        '<span class="ed-handle right" data-edge="right"></span>';
+      // select the part by clicking its body
       el.addEventListener("pointerdown", (ev) => {
         ev.stopPropagation();
         selection = { start: s.start, end: s.end }; selIndex = i;
         showSelection(); renderSegs(); syncInputs();
       });
+      // grab an edge to mark its start / end
+      el.querySelectorAll(".ed-handle").forEach((h) =>
+        h.addEventListener("pointerdown", (ev) => {
+          ev.stopPropagation();
+          handleDrag = { i, edge: h.dataset.edge };
+          selIndex = i; selection = { start: s.start, end: s.end };
+          showSelection(); syncInputs();
+        }));
       segLayer.appendChild(el);
     });
     $("#ed-hint").style.opacity = (segs.length || selection) ? 0 : 1;
+    lastActive = -2;   // let the tick loop refresh the active highlight + readout
   }
+
+  // drag a boundary handle to set a part's start / end
+  window.addEventListener("pointermove", (e) => {
+    if (!handleDrag) return;
+    const dur = duration() || 0; const seg = segs[handleDrag.i]; if (!seg) return;
+    const t = xToTime(e.clientX), idx = handleDrag.i;
+    if (handleDrag.edge === "left") {
+      const lo = idx > 0 ? segs[idx - 1].end : 0;
+      seg.start = clamp(t, lo, seg.end - MIN_SEG);
+    } else {
+      const hi = idx < segs.length - 1 ? segs[idx + 1].start : dur;
+      seg.end = clamp(t, seg.start + MIN_SEG, hi);
+    }
+    selection = { start: seg.start, end: seg.end };
+    showSelection(); renderSegs(); syncLabels();
+    status("mark " + handleDrag.edge + " · " + fmtClock(handleDrag.edge === "left" ? seg.start : seg.end));
+  });
+  window.addEventListener("pointerup", () => {
+    if (handleDrag) { handleDrag = null; lastKey = null; save(); setTimeout(() => status(""), 900); }
+  });
   function showSelection() {
     if (!selection) { selEl.style.display = "none"; return; }
     selEl.style.display = "block";
@@ -293,6 +336,14 @@
       const t = a.currentTime || 0;
       const p = paramsAt(t), s = sig(p);
       if (s !== lastKey) { applyParams(p); lastKey = s; }
+      // which part is the playhead inside? -> highlight it + show its controls
+      const ai = segs.findIndex((g) => t >= g.start && t < g.end);
+      if (ai !== lastActive) {
+        lastActive = ai;
+        segLayer.querySelectorAll(".ed-seg").forEach((el, i) => el.classList.toggle("active", i === ai));
+        const np = $("#ed-now");
+        if (np) np.textContent = (ai >= 0 ? "▸ part " + (ai + 1) + ": " : "▸ ") + describe(ai >= 0 ? segs[ai] : global);
+      }
       if ($("#studio").classList.contains("open") && duration()) playEl.style.left = pct(t) + "%";
     }
     requestAnimationFrame(tick);
