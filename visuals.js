@@ -72,15 +72,39 @@ const Dream = (function () {
   // ----------------------------------------------- backgrounds
   function loadBackgrounds(list) {
     bgList = list.map(b => {
-      const img = new Image();
-      const rec = { key: b.key, label: b.label, src: b.src, img, ok: false };
-      img.onload = () => { rec.ok = true; };
-      img.onerror = () => { rec.ok = false; };
-      img.src = b.src;
+      const isVideo = b.type === "video" || /\.(mp4|webm|mov)$/i.test(b.src);
+      const rec = { key: b.key, label: b.label, src: b.src, ok: false, isVideo };
+      if (isVideo) {
+        const v = document.createElement("video");
+        v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto"; v.crossOrigin = "anonymous";
+        v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
+        // keep it in the DOM but invisible so frames keep decoding for the canvas
+        v.style.cssText = "position:fixed;left:-20px;bottom:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1;";
+        v.addEventListener("loadeddata", () => { rec.ok = true; });
+        v.addEventListener("error", () => { rec.ok = false; });
+        v.src = b.src;
+        document.body.appendChild(v);
+        rec.media = v;
+      } else {
+        const img = new Image();
+        img.onload = () => { rec.ok = true; };
+        img.onerror = () => { rec.ok = false; };
+        img.src = b.src;
+        rec.media = img;
+      }
       return rec;
     });
   }
   function bgByKey(k) { return bgList.find(b => b.key === k) || null; }
+
+  // play the active background video(s), pause the rest (saves CPU/battery)
+  function updateBgVideos() {
+    bgList.forEach(b => {
+      if (!b.isVideo) return;
+      if (b === bgCur || b === bgPrev) { const p = b.media.play(); if (p) p.catch(() => {}); }
+      else if (!b.media.paused) b.media.pause();
+    });
+  }
 
   function setBackground(mode) {
     bgMode = mode;
@@ -91,6 +115,7 @@ const Dream = (function () {
     else next = bgByKey(mode);
     if (next === bgCur) return;
     bgPrev = bgCur; bgCur = next; bgFade = bgPrev ? 0 : 1; bgStart = t;
+    updateBgVideos();
   }
   function advanceCycle() {
     if (bgMode !== "cycle" || bgList.length === 0) return;
@@ -100,26 +125,29 @@ const Dream = (function () {
     const next = ok[(idx + 1) % ok.length];
     if (next === bgCur) return;
     bgPrev = bgCur; bgCur = next; bgFade = 0; bgStart = t; bgLastSwap = t;
+    updateBgVideos();
   }
 
   // cover-fit draw with a slow Ken-Burns zoom/pan + subtle bass pulse
   function drawCover(rec, alpha, age) {
     if (!rec || !rec.ok) return;
-    const iw = rec.img.naturalWidth, ih = rec.img.naturalHeight;
+    const m = rec.media;
+    const iw = rec.isVideo ? m.videoWidth : m.naturalWidth;
+    const ih = rec.isVideo ? m.videoHeight : m.naturalHeight;
     if (!iw || !ih) return;
     const base = Math.max(W / iw, H / ih);
-    // perpetual slow zoom: a smooth breathing in/out (never resets, never snaps)
-    // combined with an always-moving pan -> a constant impression of drifting
-    // into the scene.
-    const zoom = 1.16 + Math.sin(age * 0.045 - 1.5) * 0.10;   // ~1.06 .. 1.26, slow
+    // gentler Ken-Burns for video (its own camera already moves), stronger for stills
+    const zMid = rec.isVideo ? 1.05 : 1.16, zAmp = rec.isVideo ? 0.03 : 0.10;
+    const pAmpX = rec.isVideo ? 0.05 : 0.18, pAmpY = rec.isVideo ? 0.04 : 0.15;
+    const zoom = zMid + Math.sin(age * 0.045 - 1.5) * zAmp;   // slow breathing zoom
     const pulse = 1 + beat * 0.035;                           // bass-reactive push
     const scale = base * zoom * pulse;
     const dw = iw * scale, dh = ih * scale;
-    const panX = Math.sin(age * 0.038) * (dw - W) * 0.18 + (ptr.x - 0.5) * 40;
-    const panY = Math.cos(age * 0.031) * (dh - H) * 0.15 + (ptr.y - 0.5) * 30;
+    const panX = Math.sin(age * 0.038) * (dw - W) * pAmpX + (ptr.x - 0.5) * 40;
+    const panY = Math.cos(age * 0.031) * (dh - H) * pAmpY + (ptr.y - 0.5) * 30;
     const dx = (W - dw) / 2 + panX, dy = (H - dh) / 2 + panY;
     ctx.globalAlpha = alpha;
-    ctx.drawImage(rec.img, dx, dy, dw, dh);
+    try { ctx.drawImage(m, dx, dy, dw, dh); } catch (e) { /* video not ready */ }
     ctx.globalAlpha = 1;
   }
 

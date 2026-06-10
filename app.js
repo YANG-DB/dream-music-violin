@@ -318,12 +318,19 @@
   // ---- fantasy backgrounds ----
   // each fantasy world carries a matching atmosphere (theme key)
   const BACKGROUNDS = [
-    { key: "fantasy01", label: "I",   src: "music/backgrounds/fantasy01.jpg",  theme: "sakura"   },
-    { key: "fantasy02", label: "II",  src: "music/backgrounds/Fantasy02.webp", theme: "dream"    },
-    { key: "fantasy03", label: "III", src: "music/backgrounds/fantasy03.jpg",  theme: "nocturne" },
-    { key: "fantasy04", label: "IV",  src: "music/backgrounds/fantasy04.webp", theme: "glass"    },
-    { key: "fantasy05", label: "V",   src: "music/backgrounds/fantasy05.jpg",  theme: "dream"    },
-    { key: "fantasy06", label: "VI",  src: "music/backgrounds/fantasy06.avif", theme: "gold"     }
+    { key: "fantasy01", label: "I",    src: "music/backgrounds/fantasy01.jpg",  theme: "sakura"   },
+    { key: "fantasy02", label: "II",   src: "music/backgrounds/Fantasy02.webp", theme: "dream"    },
+    { key: "fantasy03", label: "III",  src: "music/backgrounds/fantasy03.jpg",  theme: "nocturne" },
+    { key: "fantasy04", label: "IV",   src: "music/backgrounds/fantasy04.webp", theme: "glass"    },
+    { key: "fantasy05", label: "V",    src: "music/backgrounds/fantasy05.jpg",  theme: "dream"    },
+    { key: "fantasy06", label: "VI",   src: "music/backgrounds/fantasy06.avif", theme: "gold"     },
+    { key: "fantasy07", label: "VII",  src: "music/backgrounds/fantasy07.avif", theme: "nocturne" },
+    { key: "fantasy08", label: "VIII", src: "music/backgrounds/fantasy08.jpg",  theme: "dream"    },
+    { key: "fantasy09", label: "IX",   src: "music/backgrounds/fantasy09.jpg",  theme: "glass"    },
+    { key: "fantasy10", label: "X",    src: "music/backgrounds/fantasy10.jpg",  theme: "sakura"   },
+    { key: "fantasy11", label: "XI",   src: "music/backgrounds/fantasy11.jpg",  theme: "gold"     },
+    { key: "fantasy12", label: "XII",  src: "music/backgrounds/fantasy12.jpg",  theme: "nocturne" },
+    { key: "nebula",    label: "Nebula", src: "music/backgrounds/create_a_video_where_the_camer.mp4", theme: "nocturne", type: "video" }
   ];
   Dream.loadBackgrounds(BACKGROUNDS);
 
@@ -339,7 +346,12 @@
   }
   addBgThumb("off", "○", "No image · pure dreamscape", null);
   addBgThumb("cycle", "⟳", "Shuffle through all worlds", null);
-  BACKGROUNDS.forEach(bg => addBgThumb(bg.key, "", "World " + bg.label, bg.src));
+  BACKGROUNDS.forEach(bg => addBgThumb(
+    bg.key,
+    bg.type === "video" ? "▶" : "",
+    bg.type === "video" ? "Nebula · moving video" : "World " + bg.label,
+    bg.type === "video" ? null : bg.src
+  ));
 
   let bgChoice = "off";
   function chooseBackground(mode) {
