@@ -22,6 +22,8 @@ const Dream = (function () {
   let bgCur = null, bgPrev = null, bgFade = 1;   // crossfade state
   let bgStart = 0, bgLastSwap = 0;               // Ken-Burns + cycle timing
   let bgActive = false;                          // is an image visible this frame
+  let bgAutoAdvance = false;                     // play each video once, then advance
+  let onBgEndedCb = null;                        // notified when the active video ends
   const BG_CYCLE_SECS = 16;
 
   // Pointer parallax
@@ -83,6 +85,10 @@ const Dream = (function () {
         v.style.cssText = "position:fixed;left:-20px;bottom:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1;";
         v.addEventListener("loadeddata", () => { rec.ok = true; });
         v.addEventListener("error", () => { rec.ok = false; });
+        // when the active clip finishes (auto-advance mode), move to the next world
+        v.addEventListener("ended", () => {
+          if (rec === bgCur && bgAutoAdvance && onBgEndedCb) onBgEndedCb(rec.key);
+        });
         v.src = url;
         document.body.appendChild(v);
         rec.media = v;
@@ -98,11 +104,11 @@ const Dream = (function () {
   }
   function bgByKey(k) { return bgList.find(b => b.key === k) || null; }
 
-  // play the active background video(s), pause the rest (saves CPU/battery)
+  // play the freshly-activated clip from its start, pause the rest (saves battery)
   function updateBgVideos() {
     bgList.forEach(b => {
       if (!b.isVideo) return;
-      if (b === bgCur || b === bgPrev) { const p = b.media.play(); if (p) p.catch(() => {}); }
+      if (b === bgCur) { try { b.media.currentTime = 0; } catch (e) {} const p = b.media.play(); if (p) p.catch(() => {}); }
       else if (!b.media.paused) b.media.pause();
     });
   }
@@ -767,6 +773,12 @@ const Dream = (function () {
     setBackground,
     bgItems() { return bgList.map(b => ({ key: b.key, label: b.label })); },
     bgMode() { return bgMode; },
+    // play each video once then advance (vs. loop). Sets loop on all bg videos.
+    setBgAutoAdvance(v) {
+      bgAutoAdvance = !!v;
+      bgList.forEach(b => { if (b.isVideo) b.media.loop = !bgAutoAdvance; });
+    },
+    onBgEnded(fn) { onBgEndedCb = fn; },
     // ---- mixable effects ----
     fxMeta() { return FX_META; },
     setFx(key, on) { if (key in fx) fx[key] = !!on; },

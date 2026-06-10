@@ -62,7 +62,8 @@
   $("#enter").addEventListener("click", () => {
     ensureAudioGraph();
     if (actx && actx.state === "suspended") actx.resume();
-    if (!perSong) Dream.setAuto(true);   // adaptive mode when not per-song
+    if (perSong) { Dream.setBgAutoAdvance(true); advanceWorld(); }  // start the video playlist
+    else Dream.setAuto(true);              // adaptive mode when not per-song
     syncThemeUI();
     show("gallery");
     play(ALBUMS[0], 0);             // begin the first album right away
@@ -124,7 +125,6 @@
     const sameTrack = (al === curAlbum && idx === curIndex);
     curAlbum = al; curIndex = idx;
     if (!sameTrack) {
-      if (perSong) advanceWorld();      // new song -> new world & atmosphere
       audio.src = srcFor(al, idx);
       audio.load();
     }
@@ -372,7 +372,7 @@
 
   // ---- per-song: step through the video worlds, one after another ----
   const VIDEO_BGS = BACKGROUNDS.filter((b) => b.type === "video");
-  let videoIdx = -1;
+  let videoIdx = -1, bgWatchdog = null;
   const persongEl = $("#persong-toggle");
   persongEl.checked = perSong;
   function advanceWorld() {
@@ -384,18 +384,25 @@
     Dream.setBackground(pick.key);   bgChoice = pick.key;
     Dream.setTheme(pick.theme);      applyAccent(pick.theme);
     syncBgUI(); syncThemeUI();
-    toast("world · " + pick.label + " · " + THEMES[pick.theme].label.toLowerCase());
+    // fallback: advance even if the clip's "ended" event is missed
+    clearTimeout(bgWatchdog);
+    if (perSong) bgWatchdog = setTimeout(() => { if (perSong) advanceWorld(); }, 14000);
   }
   function disablePerSong() {
     perSong = false;
     persongEl.checked = false;
     localStorage.setItem("dream-persong", "0");
+    Dream.setBgAutoAdvance(false);   // pin: the chosen video loops instead
+    clearTimeout(bgWatchdog);
   }
   persongEl.addEventListener("change", (e) => {
     perSong = e.target.checked;
     localStorage.setItem("dream-persong", perSong ? "1" : "0");
-    if (perSong) advanceWorld();     // apply right away
+    Dream.setBgAutoAdvance(perSong);
+    if (perSong) advanceWorld();     // start the playlist right away
   });
+  // when a background video finishes, drift to the next world
+  Dream.onBgEnded(() => { if (perSong) advanceWorld(); });
 
   const savedBg = localStorage.getItem("dream-bg") || "off";
   if (!perSong) { bgChoice = savedBg; Dream.setBackground(savedBg); }
