@@ -42,7 +42,7 @@
     tx = rand(0.12, 0.88) * W;
     ty = rand(0.14, 0.68) * H;
     tdepth = rand(0.72, 1.28);
-    waypointAt = now + rand(2.2, 4.6);
+    waypointAt = now + rand(6, 11);   // lingers far longer toward each waypoint
   }
   function scheduleVisitEnd(now) { nextEvent = now + rand(VISIT[0], VISIT[1]); }   // end this visit soon
 
@@ -64,10 +64,10 @@
     let dt = now - last; last = now;
     if (dt > 0.05) dt = 0.05;     // clamp after tab-switches
 
-    // optional coupling to the music — dart more when the violin swells
+    // a gentle, barely-there coupling to the music (kept slow on purpose)
     let energy = 0;
     try { if (window.Dream && Dream.signals) energy = Dream.signals().energy || 0; } catch (e) { /* ignore */ }
-    const speedK = 1 + energy * 1.4;
+    const speedK = 1 + energy * 0.25;
 
     // a brief visit, then a long absence before it drifts back in
     if (!away && now > nextEvent) { away = true; opTarget = 0; }
@@ -83,8 +83,8 @@
     const dx = tx - x, dy = ty - y;
     if (Math.hypot(dx, dy) < 38 || now > waypointAt) pickWaypoint(now);
 
-    // smooth glide toward the waypoint (exponential ease -> curved, lifelike path)
-    const halfLife = 0.95 / speedK;
+    // smooth glide toward the waypoint (long half-life -> slow, drifting path)
+    const halfLife = 3.6 / speedK;
     const ease = 1 - Math.pow(0.5, dt / halfLife);
     const nx = x + (tx - x) * ease;
     const ny = y + (ty - y) * ease;
@@ -97,7 +97,7 @@
     // face the direction of travel (source faces left -> mirror when going right).
     // Flip by fading out, snapping the mirror while invisible, then fading back in,
     // so the bird never squashes horizontally through zero width.
-    const desired = velX > 60 ? -1 : velX < -60 ? 1 : facing;
+    const desired = velX > 30 ? -1 : velX < -30 ? 1 : facing;
     if (!flipping && desired !== facing && now - lastFlip > 0.5) flipping = true;
     if (flipping) {
       flipOp += (0 - flipOp) * Math.min(1, dt * 12);          // fade out fast
