@@ -15,3 +15,6 @@ create_A_single_iridescent_hum.mp4
 # Node (none used, but just in case)
 node_modules/
 npm-debug.log*
+
+# Firebase CLI debug logs
+firebase-debug.log*
