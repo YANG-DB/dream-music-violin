@@ -109,7 +109,9 @@ body { position: relative; }
 /* ---------- Gallery ---------- */
 .gallery-head, .album-head {
   display: flex; align-items: baseline; gap: 22px; flex-wrap: wrap;
-  padding: clamp(28px, 5vh, 60px) clamp(28px, 6vw, 90px) 10px;
+  /* left padding clears the sound-studio toggle (top-left) so the back button
+     is never hidden under it */
+  padding: clamp(28px, 5vh, 60px) clamp(28px, 6vw, 90px) 10px max(82px, clamp(28px, 6vw, 90px));
 }
 .gallery-title, .album-title {
   font-family: "Cormorant Garamond", serif; font-weight: 400;
