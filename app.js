@@ -330,7 +330,9 @@
     { key: "fantasy10", label: "X",    src: "music/backgrounds/fantasy10.jpg",  theme: "sakura"   },
     { key: "fantasy11", label: "XI",   src: "music/backgrounds/fantasy11.jpg",  theme: "gold"     },
     { key: "fantasy12", label: "XII",  src: "music/backgrounds/fantasy12.jpg",  theme: "nocturne" },
-    { key: "nebula",    label: "Nebula", src: "music/backgrounds/create_a_video_where_the_camer.mp4", theme: "nocturne", type: "video" }
+    { key: "vid-nebula", label: "Nebula",        src: "music/backgrounds/create_a_video_where_the_camer.mp4",     theme: "nocturne", type: "video" },
+    { key: "vid-isles",  label: "Floating Isles", src: "music/backgrounds/create_a_video_where_the_camer (1).mp4", theme: "gold",     type: "video" },
+    { key: "vid-blossom", label: "Blossom Lake",  src: "music/backgrounds/create_a_video_where_the_camer (2).mp4", theme: "sakura",   type: "video" }
   ];
   Dream.loadBackgrounds(BACKGROUNDS);
 
@@ -349,7 +351,7 @@
   BACKGROUNDS.forEach(bg => addBgThumb(
     bg.key,
     bg.type === "video" ? "▶" : "",
-    bg.type === "video" ? "Nebula · moving video" : "World " + bg.label,
+    bg.type === "video" ? bg.label + " · moving video" : "World " + bg.label,
     bg.type === "video" ? null : bg.src
   ));
 

@@ -73,7 +73,8 @@ const Dream = (function () {
   function loadBackgrounds(list) {
     bgList = list.map(b => {
       const isVideo = b.type === "video" || /\.(mp4|webm|mov)$/i.test(b.src);
-      const rec = { key: b.key, label: b.label, src: b.src, ok: false, isVideo };
+      const url = encodeURI(b.src);            // handle spaces / parens in filenames
+      const rec = { key: b.key, label: b.label, src: url, ok: false, isVideo };
       if (isVideo) {
         const v = document.createElement("video");
         v.muted = true; v.loop = true; v.playsInline = true; v.preload = "auto"; v.crossOrigin = "anonymous";
@@ -82,14 +83,14 @@ const Dream = (function () {
         v.style.cssText = "position:fixed;left:-20px;bottom:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1;";
         v.addEventListener("loadeddata", () => { rec.ok = true; });
         v.addEventListener("error", () => { rec.ok = false; });
-        v.src = b.src;
+        v.src = url;
         document.body.appendChild(v);
         rec.media = v;
       } else {
         const img = new Image();
         img.onload = () => { rec.ok = true; };
         img.onerror = () => { rec.ok = false; };
-        img.src = b.src;
+        img.src = url;
         rec.media = img;
       }
       return rec;
