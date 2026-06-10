@@ -332,7 +332,9 @@
     { key: "fantasy12", label: "XII",  src: "music/backgrounds/fantasy12.jpg",  theme: "nocturne" },
     { key: "vid-nebula", label: "Nebula",        src: "music/backgrounds/create_a_video_where_the_camer.mp4",     theme: "nocturne", type: "video" },
     { key: "vid-isles",  label: "Floating Isles", src: "music/backgrounds/create_a_video_where_the_camer (1).mp4", theme: "gold",     type: "video" },
-    { key: "vid-blossom", label: "Blossom Lake",  src: "music/backgrounds/create_a_video_where_the_camer (2).mp4", theme: "sakura",   type: "video" }
+    { key: "vid-blossom", label: "Blossom Lake",  src: "music/backgrounds/create_a_video_where_the_camer (2).mp4", theme: "sakura",   type: "video" },
+    { key: "vid-peaks",  label: "Misty Peaks",    src: "music/backgrounds/ElevenLabs_video_seedance-2-0_the camera f..._2026-06-10T05_43_43.mp4", theme: "glass", type: "video" },
+    { key: "vid-alien",  label: "Alien Crystals", src: "music/backgrounds/ElevenLabs_video_veo-3-1-fast_A vast, alie..._2026-06-10T05_37_36.mp4", theme: "dream", type: "video" }
   ];
   Dream.loadBackgrounds(BACKGROUNDS);
 
