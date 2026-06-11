@@ -58,16 +58,26 @@
   }
   $$("[data-nav]").forEach(b => b.addEventListener("click", () => show(b.dataset.nav)));
 
-  // ---- portal -> gallery ----
-  $("#enter").addEventListener("click", () => {
+  // ---- auto-start: land on the albums and begin (no portal) ----
+  let started = false;
+  function beginExperience() {
     ensureAudioGraph();
     if (actx && actx.state === "suspended") actx.resume();
-    if (perSong) { Dream.setBgAutoAdvance(true); advanceWorld(); }  // start the video playlist
-    else Dream.setAuto(true);              // adaptive mode when not per-song
-    syncThemeUI();
-    show("gallery");
-    play(ALBUMS[0], 0);             // begin the first album right away
-  });
+    if (!started) {                       // run the world/playlist setup once
+      started = true;
+      if (perSong) { Dream.setBgAutoAdvance(true); advanceWorld(); }  // start the video playlist
+      else Dream.setAuto(true);
+      syncThemeUI();
+    }
+    if (!curAlbum) play(ALBUMS[0], 0);    // begin the first album
+    else if (audio.paused) audio.play().catch(() => {});
+  }
+  // browsers block audible autoplay until a gesture — kick off on the first one
+  function firstGesture() {
+    beginExperience();
+    ["pointerdown", "keydown", "touchstart"].forEach(ev => window.removeEventListener(ev, firstGesture));
+  }
+  ["pointerdown", "keydown", "touchstart"].forEach(ev => window.addEventListener(ev, firstGesture, { passive: true }));
 
   // ---- build gallery cards ----
   const worlds = $("#worlds");
@@ -232,7 +242,8 @@
   // ---- large transparent "begin" button ----
   const bigplay = $("#bigplay");
   function updateBigPlay() {
-    const portalActive = $("#portal").classList.contains("active");
+    const portal = $("#portal");
+    const portalActive = !!(portal && portal.classList.contains("active"));
     bigplay.classList.toggle("show", !portalActive && audio.paused);
   }
   bigplay.querySelector(".bigplay-btn").addEventListener("click", () => {
@@ -334,7 +345,12 @@
     { key: "vid-isles",  label: "Floating Isles", src: "music/backgrounds/create_a_video_where_the_camer (1).mp4", theme: "gold",     type: "video" },
     { key: "vid-blossom", label: "Blossom Lake",  src: "music/backgrounds/create_a_video_where_the_camer (2).mp4", theme: "sakura",   type: "video" },
     { key: "vid-peaks",  label: "Misty Peaks",    src: "music/backgrounds/ElevenLabs_video_seedance-2-0_the camera f..._2026-06-10T05_43_43.mp4", theme: "glass", type: "video" },
-    { key: "vid-alien",  label: "Alien Crystals", src: "music/backgrounds/ElevenLabs_video_veo-3-1-fast_A vast, alie..._2026-06-10T05_37_36.mp4", theme: "dream", type: "video" }
+    { key: "vid-alien",  label: "Alien Crystals", src: "music/backgrounds/ElevenLabs_video_veo-3-1-fast_A vast, alie..._2026-06-10T05_37_36.mp4", theme: "dream", type: "video" },
+    { key: "vid-spires", label: "Cloud Spires",   src: "music/backgrounds/the_camera_slowly_moves_toward.mp4", theme: "glass",    type: "video" },
+    { key: "vid-autumn", label: "Golden Autumn",  src: "music/backgrounds/the_camera_will_move_slowely_t.mp4", theme: "gold",     type: "video" },
+    { key: "vid-orb",    label: "Glass Orb",      src: "music/backgrounds/ElevenLabs_video_seedance-2-0_the camera f..._2026-06-10T06_00_52.mp4", theme: "sakura",   type: "video" },
+    { key: "vid-castle", label: "Night Castle",   src: "music/backgrounds/ElevenLabs_video_seedance-2-0_the camera f..._2026-06-10T06_05_34.mp4", theme: "nocturne", type: "video" },
+    { key: "vid-isles2", label: "Sky Isles",      src: "music/backgrounds/ElevenLabs_video_seedance-2-0_the camera f..._2026-06-10T06_14_23.mp4", theme: "dream",    type: "video" }
   ];
   Dream.loadBackgrounds(BACKGROUNDS);
 
@@ -501,4 +517,8 @@
   // ============================ boot ============================
   Dream.init($("#dream"));
   syncThemeUI();
+  // land on the albums with visuals + the video playlist running, and try to
+  // begin the music (falls back to the first click / the big ▶ if autoplay is blocked)
+  beginExperience();
+  updateBigPlay();
 })();
