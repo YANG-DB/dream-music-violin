@@ -58,23 +58,24 @@
   }
   $$("[data-nav]").forEach(b => b.addEventListener("click", () => show(b.dataset.nav)));
 
-  // ---- auto-start: land on the albums and begin (no portal) ----
-  let started = false;
-  function beginExperience() {
+  // ---- auto-start ----
+  let worldsStarted = false, audioStarted = false;
+  // visuals + the muted video playlist need no AudioContext, so start them at boot
+  function startWorlds() {
+    if (worldsStarted) return; worldsStarted = true;
+    if (perSong) { Dream.setBgAutoAdvance(true); advanceWorld(); }
+    else Dream.setAuto(true);
+    syncThemeUI();
+  }
+  // audible audio + the AudioContext are only allowed after a user gesture
+  function startAudio() {
+    if (audioStarted) return; audioStarted = true;
     ensureAudioGraph();
     if (actx && actx.state === "suspended") actx.resume();
-    if (!started) {                       // run the world/playlist setup once
-      started = true;
-      if (perSong) { Dream.setBgAutoAdvance(true); advanceWorld(); }  // start the video playlist
-      else Dream.setAuto(true);
-      syncThemeUI();
-    }
-    if (!curAlbum) play(ALBUMS[0], 0);    // begin the first album
-    else if (audio.paused) audio.play().catch(() => {});
+    if (!curAlbum) play(ALBUMS[0], 0); else if (audio.paused) audio.play().catch(() => {});
   }
-  // browsers block audible autoplay until a gesture — kick off on the first one
   function firstGesture() {
-    beginExperience();
+    startAudio();
     ["pointerdown", "keydown", "touchstart"].forEach(ev => window.removeEventListener(ev, firstGesture));
   }
   ["pointerdown", "keydown", "touchstart"].forEach(ev => window.addEventListener(ev, firstGesture, { passive: true }));
@@ -247,10 +248,8 @@
     bigplay.classList.toggle("show", !portalActive && audio.paused);
   }
   bigplay.querySelector(".bigplay-btn").addEventListener("click", () => {
-    ensureAudioGraph();
-    if (actx && actx.state === "suspended") actx.resume();
-    if (!curAlbum) play(ALBUMS[0], 0);   // nothing chosen yet -> begin Album I
-    else togglePlay();                    // otherwise resume what was loaded
+    if (!audioStarted) startAudio();      // first start (creates AudioContext on this gesture)
+    else if (audio.paused) togglePlay();  // otherwise resume what was loaded
   });
   audio.addEventListener("play", updateBigPlay);
   audio.addEventListener("pause", updateBigPlay);
@@ -517,8 +516,8 @@
   // ============================ boot ============================
   Dream.init($("#dream"));
   syncThemeUI();
-  // land on the albums with visuals + the video playlist running, and try to
-  // begin the music (falls back to the first click / the big ▶ if autoplay is blocked)
-  beginExperience();
+  // land on the albums with visuals + the video playlist running; the music
+  // starts on the first tap / the big ▶ (browsers block audio before a gesture)
+  startWorlds();
   updateBigPlay();
 })();

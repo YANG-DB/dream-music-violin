@@ -733,7 +733,11 @@ const Dream = (function () {
   // -------------------------------------------------- public
   function resize() {
     DPR = Math.min(2, window.devicePixelRatio || 1);
-    W = canvas.clientWidth; H = canvas.clientHeight;
+    // device-aware: track the live visual viewport (handles mobile chrome + rotation)
+    const vv = window.visualViewport;
+    W = Math.max(1, Math.round(vv ? vv.width : (window.innerWidth || canvas.clientWidth)));
+    H = Math.max(1, Math.round(vv ? vv.height : (window.innerHeight || canvas.clientHeight)));
+    canvas.style.width = W + "px"; canvas.style.height = H + "px";
     canvas.width = W * DPR; canvas.height = H * DPR;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     seed();
@@ -744,16 +748,17 @@ const Dream = (function () {
       canvas = cv; ctx = canvas.getContext("2d");
       makeGlow();
       setTheme("nocturne");
-      const fit = () => resize();
-      // size to viewport
-      const style = () => { canvas.style.width = "100%"; canvas.style.height = "100%"; };
-      style(); resize();
-      window.addEventListener("resize", () => { resize(); }, { passive: true });
+      resize();
+      // re-fit to the device on resize / rotation / mobile-chrome changes
+      let rt = null;
+      const refit = () => { clearTimeout(rt); rt = setTimeout(resize, 120); };
+      window.addEventListener("resize", refit, { passive: true });
+      window.addEventListener("orientationchange", () => setTimeout(resize, 250), { passive: true });
+      if (window.visualViewport) window.visualViewport.addEventListener("resize", refit, { passive: true });
       window.addEventListener("pointermove", (e) => {
         ptr.tx = e.clientX / window.innerWidth;
         ptr.ty = e.clientY / window.innerHeight;
       }, { passive: true });
-      void fit;
       running = true; lastT = performance.now() / 1000;
       requestAnimationFrame(frame);
     },
