@@ -115,6 +115,53 @@
 
 <div id="hint-auto" class="auto-hint"></div>
 
+<!-- ============ GENERATIVE (DDSP timbre transfer) ============ -->
+<div id="gen" class="gen">
+  <button id="gen-toggle" class="gen-toggle" title="Generative · turn any sound into your violin">✺</button>
+  <div id="gen-modal" class="gen-modal" aria-hidden="true">
+    <div class="gen-card">
+      <header class="gen-head">
+        <div>
+          <h3 class="gen-title">Generative</h3>
+          <p class="gen-sub">turn any sound into your violin's voice</p>
+        </div>
+        <span id="gen-mode" class="gen-mode">—</span>
+        <button id="gen-close" class="gen-close" title="Close">✕</button>
+      </header>
+
+      <div class="gen-src">
+        <button id="gen-rec" class="gen-srcbtn" title="Record from your microphone">● record</button>
+        <button id="gen-up" class="gen-srcbtn" title="Upload an audio file">⤒ upload</button>
+        <button id="gen-cur" class="gen-srcbtn" title="Use the movement playing now">♪ this movement</button>
+        <input id="gen-file" type="file" accept="audio/*" hidden />
+      </div>
+      <div id="gen-source" class="gen-source">no source yet — record, upload, or use the current movement</div>
+      <audio id="gen-src-audio" class="gen-audio" controls></audio>
+
+      <div class="gen-knobs">
+        <label class="gen-knob"><span class="gk-top"><span>pitch</span><span id="gk-pitch-v">0 st</span></span>
+          <input id="gk-pitch" type="range" min="-12" max="12" step="1" value="0" /></label>
+        <label class="gen-knob"><span class="gk-top"><span>loudness</span><span id="gk-loud-v">0 dB</span></span>
+          <input id="gk-loud" type="range" min="-12" max="12" step="0.5" value="0" /></label>
+      </div>
+
+      <button id="gen-go" class="gen-go" disabled>✺ transform to violin</button>
+      <div id="gen-status" class="gen-status"></div>
+
+      <div id="gen-result" class="gen-result hidden">
+        <audio id="gen-out-audio" class="gen-audio" controls></audio>
+        <div class="gen-result-row">
+          <a id="gen-dl" class="gen-srcbtn" download="violin.wav">⤓ download</a>
+          <button id="gen-toplayer" class="gen-srcbtn" title="Play it over the dreamscape (visuals react)">↪ to dreamscape</button>
+        </div>
+      </div>
+
+      <label class="gen-svc"><span>service</span>
+        <input id="gen-url" type="text" spellcheck="false" value="http://localhost:8080/transfer" /></label>
+    </div>
+  </div>
+</div>
+
 <!-- ============ SOUND EDITOR (waveform) ============ -->
 <div id="studio" class="studio">
   <button id="studio-toggle" class="studio-toggle" title="Sound editor">🎚</button>
@@ -166,6 +213,7 @@
 <script src="visuals.js"></script>
 <script src="app.js"></script>
 <script type="module" src="studio.js"></script>
+<script src="generative.js"></script>
 <script src="hummingbird.js"></script>
 </body>
 </html>

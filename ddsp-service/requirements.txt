@@ -1,0 +1,9 @@
+# DDSP pulls in TensorFlow, crepe, etc. Pin loosely; tighten after first build.
+ddsp==3.7.0
+tensorflow==2.15.*
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+soundfile>=0.12
+librosa>=0.10
+numpy<2          # TF 2.15 is not numpy-2 compatible

@@ -1,0 +1,7 @@
+# Drop your trained DDSP violin checkpoint here:
+#   operative_config.gin  (or operative_config-0.gin)
+#   ckpt-XXXXX.index
+#   ckpt-XXXXX.data-00000-of-00001
+#   checkpoint
+# Exported by the DDSP train_autoencoder Colab. Until present, the service runs
+# in passthrough mode.

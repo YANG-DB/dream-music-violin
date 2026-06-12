@@ -18,3 +18,8 @@ npm-debug.log*
 
 # Firebase CLI debug logs
 firebase-debug.log*
+
+# Python / DDSP service
+**/.venv/
+**/__pycache__/
+*.pyc

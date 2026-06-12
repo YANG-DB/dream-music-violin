@@ -35,3 +35,11 @@ speak before any word does. They were not written to be analysed; they were made
 be felt, and this is simply a vessel that lets them be felt a little more.
 
 Lean back. Let it play on.
+
+## Generative Music
+The flow: POST /transfer with an audio file → decode/resample to 16 kHz mono → CREPE f0 + loudness extraction → run your trained DDSP Autoencoder → stream back a WAV. Optional query params let you pitch-shift (e.g. +1 octave if your input is below violin register) and adjust loudness.
+
+Key design choices worth knowing: the model loads once at startup with a warm-up pass so the first real request isn't slow; CPU-only is deliberate (DDSP inference doesn't need a GPU — CREPE is the bottleneck at a few seconds per 10s of audio); and the checkpoint is baked into the Docker image, which is the simplest thing that works on Cloud Run.
+
+The README covers local run, Cloud Run deploy (one gcloud run deploy --source . command), the HF Spaces alternative, and the JS snippet for calling it from your site — including the MediaRecorder gotcha (browsers record webm, which ffmpeg in the container handles).
+The one thing you supply is models/violin/ — the operative_config.gin + ckpt-* files the DDSP training Colab exports after you train on your recordings.

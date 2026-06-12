@@ -1,0 +1,9 @@
+# Lightweight deps — runs the service in PASSTHROUGH mode (ffmpeg pitch/gain).
+# Enough to drive the whole localhost flow end-to-end with no ML stack.
+#   pip install -r requirements-min.txt
+#   uvicorn app:app --port 8080
+# (needs ffmpeg on PATH). For real timbre transfer install requirements.txt
+# and drop a checkpoint in models/violin/.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
